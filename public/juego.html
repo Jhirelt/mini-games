@@ -725,109 +725,121 @@ function gameMemoria(){
 ===================================================================== */
 function gameSerpiente(){
   const g = GAMES.find(x=>x.id==='serpiente');
-  const CELL = 24, COLS = 26, ROWS = 20;
+  const CELL=24, COLS=26, ROWS=20, CW=26*24, CH=20*24;
 
   function render(){
-    screen.innerHTML = `
+    screen.innerHTML=`
       ${gameShellHeader(g)}
       <div class="hud">
         <div class="stat">Puntos<br><b id="hudScore">0</b></div>
         <div class="stat">Velocidad<br><b id="hudSpeed">1.0x</b></div>
       </div>
-      <canvas id="snakeCanvas" width="${COLS*CELL}" height="${ROWS*CELL}"></canvas>
+      <canvas id="snakeCanvas" width="${CW}" height="${CH}"></canvas>
       <div style="text-align:center;margin-top:14px;">
         <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
         <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'Iniciar'}</button>
       </div>
-      <div id="resultSlot"></div>
-    `;
+      <div id="resultSlot"></div>`;
     bindBack();
-    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
-    if(state.attempts[g.id].length){
-      const last = state.attempts[g.id][state.attempts[g.id].length-1];
-      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
-    }
+    const btn=document.getElementById('startBtn');
+    if(btn&&!btn.disabled){ btn.addEventListener('click',go); bindEnterStart('startBtn'); }
+    const prev=state.attempts[g.id];
+    if(prev.length) document.getElementById('resultSlot').innerHTML=renderResultBox(g.id,prev[prev.length-1].score);
     drawIdle();
   }
 
   function drawIdle(){
-    const cv = document.getElementById('snakeCanvas');
-    if(!cv) return;
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle='#16171f'; ctx.fillRect(0,0,cv.width,cv.height);
+    const cv=document.getElementById('snakeCanvas'); if(!cv) return;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#16171f'; ctx.fillRect(0,0,CW,CH);
     ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=.5;
-    for(let x=0;x<COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,cv.height);ctx.stroke();}
-    for(let y=0;y<ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(cv.width,y*CELL);ctx.stroke();}
+    for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,CH);ctx.stroke();}
+    for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*CELL);ctx.lineTo(CW,j*CELL);ctx.stroke();}
   }
 
-  function startAttempt(){
-    document.getElementById('startBtn').disabled = true;
-    const cv = document.getElementById('snakeCanvas');
-    const ctx = cv.getContext('2d');
+  function go(){
+    const btn=document.getElementById('startBtn'); if(btn) btn.disabled=true;
+    const cv=document.getElementById('snakeCanvas'); if(!cv) return;
+    const ctx=cv.getContext('2d');
 
-    let dx=1, dy=0, ndx=1, ndy=0;  // usar scalares, sin objetos
     let snake=[{x:8,y:7},{x:7,y:7},{x:6,y:7}];
-    let food=randomFood(), poisons=spawnPoisons();
-    let score=0, alive=true, eatFlash=0;
-    let rafId=null, lastMoveTs=0;
-    function getMsPerMove(){ return Math.max(48,145-score*4); }
+    let vx=1,vy=0,nx=1,ny=0;
+    let score=0,alive=true,flash=0;
+    let tid=null;
 
-    function occupied(extra=[]){ return snake.concat(extra); }
-    function randomFood(){
-      let f, n=0;
-      do{ f={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)}; n++; }
-      while(n<500 && occupied().some(s=>s.x===f.x&&s.y===f.y));
-      return f;
+    function spd(){ return Math.max(50,150-score*5); }
+
+    function freeCell(c,also){
+      return !snake.some(s=>s.x===c.x&&s.y===c.y)&&!(also&&also.some(a=>a.x===c.x&&a.y===c.y));
     }
-    function spawnPoisons(){
-      const count=4+Math.floor(score/3); const arr=[]; let n=0;
-      while(arr.length<count && n<200){ n++;
-        const p={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};
-        if(!occupied(arr).some(s=>s.x===p.x&&s.y===p.y)&&!(p.x===food.x&&p.y===food.y)) arr.push(p);
+    function rndPos(also){
+      let c,n=0;
+      do{ c={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};n++; }
+      while(n<400&&!freeCell(c,also));
+      return c;
+    }
+
+    let food=rndPos();
+    let poisons=[];
+    function refreshP(){
+      poisons=[];
+      const n=4+Math.floor(score/3);
+      for(let i=0;i<n;i++){
+        const c=rndPos(poisons.concat([food]));
+        poisons.push(c);
       }
-      return arr;
     }
+    refreshP();
 
     function onKey(e){
-      const k=e.key.toLowerCase();
-      if((k==='arrowup'   ||k==='w')&&dy===0){ ndx=0; ndy=-1; }
-      else if((k==='arrowdown' ||k==='s')&&dy===0){ ndx=0; ndy=1; }
-      else if((k==='arrowleft' ||k==='a')&&dx===0){ ndx=-1; ndy=0; }
-      else if((k==='arrowright'||k==='d')&&dx===0){ ndx=1; ndy=0; }
+      if(e.key==='ArrowUp'   ||(e.key==='w'&&e.key.length===1)){if(vy===0){nx=0;ny=-1;}}
+      else if(e.key==='ArrowDown'  ||(e.key==='s'&&e.key.length===1)){if(vy===0){nx=0;ny=1;}}
+      else if(e.key==='ArrowLeft'  ||(e.key==='a'&&e.key.length===1)){if(vx===0){nx=-1;ny=0;}}
+      else if(e.key==='ArrowRight' ||(e.key==='d'&&e.key.length===1)){if(vx===0){nx=1;ny=0;}}
     }
-    // agregar keyHandler DESPUÉS de un breve delay para evitar que el Space/Enter
-    // que inició el juego se procese como input de movimiento
-    setTimeout(()=>window.addEventListener('keydown',onKey), 100);
+    const kdelay=setTimeout(()=>window.addEventListener('keydown',onKey),200);
 
-    function moveTick(){
-      dx=ndx; dy=ndy;
-      const head={x:snake[0].x+dx, y:snake[0].y+dy};
-      const willEat=(head.x===food.x&&head.y===food.y);
-      const body=willEat?snake:snake.slice(0,-1);
-      if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS
-        ||body.some(s=>s.x===head.x&&s.y===head.y)
-        ||poisons.some(p=>p.x===head.x&&p.y===head.y)){
-        endAttempt(); return;
-      }
-      snake.unshift(head);
-      if(willEat){
+    function tick(){
+      if(!alive) return;
+      vx=nx; vy=ny;
+      const hx=snake[0].x+vx, hy=snake[0].y+vy;
+      if(hx<0||hx>=COLS||hy<0||hy>=ROWS){die();return;}
+      const body=snake.slice(0,-1);
+      if(body.some(s=>s.x===hx&&s.y===hy)){die();return;}
+      if(poisons.some(p=>p.x===hx&&p.y===hy)){die();return;}
+      const ate=(hx===food.x&&hy===food.y);
+      snake.unshift({x:hx,y:hy});
+      if(ate){
         score++;
+        flash=3;
         const se=document.getElementById('hudScore');
         const ve=document.getElementById('hudSpeed');
         if(se) se.textContent=score;
-        if(ve) ve.textContent=(145/getMsPerMove()).toFixed(1)+'x';
-        food=randomFood(); poisons=spawnPoisons(); eatFlash=3;
+        if(ve) ve.textContent=(150/spd()).toFixed(1)+'x';
+        food=rndPos(); refreshP();
+        clearInterval(tid); tid=setInterval(tick,spd());
       } else { snake.pop(); }
+      draw();
+    }
+
+    function drawApple(fx,fy){
+      const cx=fx*CELL+CELL/2,cy=fy*CELL+CELL/2,r=CELL/2-2;
+      ctx.fillStyle='rgba(0,0,0,.18)';
+      ctx.beginPath();ctx.ellipse(cx,cy+r*.6,r*.62,r*.24,0,0,Math.PI*2);ctx.fill();
+      const gr=ctx.createRadialGradient(cx-r*.3,cy-r*.3,1,cx,cy,r);
+      gr.addColorStop(0,'#b8ffb0');gr.addColorStop(.65,'#4ecf68');gr.addColorStop(1,'#2a8040');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.48)';ctx.beginPath();ctx.arc(cx-r*.28,cy-r*.28,r*.22,0,Math.PI*2);ctx.fill();
     }
 
     function drawSeg(sx,sy,color,isHead){
       const x=sx*CELL+1,y=sy*CELL+1,w=CELL-2,h=CELL-2;
-      ctx.fillStyle=color; ctx.fillRect(x,y,w,h);
-      ctx.fillStyle='rgba(255,255,255,.3)'; ctx.fillRect(x,y,w,3); ctx.fillRect(x,y,3,h);
-      ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fillRect(x,y+h-3,w,3); ctx.fillRect(x+w-3,y,3,h);
+      ctx.fillStyle=color;ctx.fillRect(x,y,w,h);
+      ctx.fillStyle='rgba(255,255,255,.26)';ctx.fillRect(x,y,w,3);ctx.fillRect(x,y,3,h);
+      ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(x,y+h-3,w,3);ctx.fillRect(x+w-3,y,3,h);
       if(isHead){
-        const ex1=dx!==0?w*.6:w*.28, ey1=dy!==0?h*.6:h*.28;
-        const ex2=dx!==0?w*.6:w*.7, ey2=dy!==0?h*.6:h*.7;
+        const ex1=vx!==0?w*.6:w*.28,ey1=vy!==0?h*.6:h*.28;
+        const ex2=vx!==0?w*.6:w*.7,ey2=vy!==0?h*.6:h*.7;
         ctx.fillStyle='#fff';
         [[ex1,ey1],[ex2,ey2]].forEach(([ex,ey])=>{
           ctx.beginPath();ctx.arc(x+ex,y+ey,2.8,0,Math.PI*2);ctx.fill();
@@ -837,28 +849,17 @@ function gameSerpiente(){
       }
     }
 
-    function drawApple(fx,fy){
-      const cx=fx*CELL+CELL/2,cy=fy*CELL+CELL/2,r=CELL/2-2;
-      ctx.fillStyle='rgba(0,0,0,.2)';
-      ctx.beginPath();ctx.ellipse(cx,cy+r*.65,r*.7,r*.28,0,0,Math.PI*2);ctx.fill();
-      const gr=ctx.createRadialGradient(cx-r*.3,cy-r*.3,1,cx,cy,r);
-      gr.addColorStop(0,'#b8ffb0');gr.addColorStop(.65,'#4ecf68');gr.addColorStop(1,'#2a8040');
-      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.arc(cx-r*.28,cy-r*.28,r*.24,0,Math.PI*2);ctx.fill();
-    }
-
     function draw(){
-      ctx.fillStyle=eatFlash>0?'#1e2930':'#16171f';
-      ctx.fillRect(0,0,cv.width,cv.height);
-      if(eatFlash>0) eatFlash--;
+      ctx.fillStyle=flash>0?'#192518':'#16171f';
+      ctx.fillRect(0,0,CW,CH);
+      if(flash>0) flash--;
       ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.5;
-      for(let x=0;x<COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,cv.height);ctx.stroke();}
-      for(let y=0;y<ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(cv.width,y*CELL);ctx.stroke();}
+      for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,CH);ctx.stroke();}
+      for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*CELL);ctx.lineTo(CW,j*CELL);ctx.stroke();}
       drawApple(food.x,food.y);
-      ctx.shadowBlur=7;
+      ctx.shadowBlur=8;ctx.strokeStyle='#FF6B6B';ctx.shadowColor='#FF6B6B';ctx.lineWidth=2.5;
       poisons.forEach(p=>{
         const x=p.x*CELL,y=p.y*CELL;
-        ctx.strokeStyle='#FF6B6B';ctx.shadowColor='#FF6B6B';ctx.lineWidth=2.5;
         ctx.beginPath();ctx.moveTo(x+5,y+5);ctx.lineTo(x+CELL-5,y+CELL-5);ctx.stroke();
         ctx.beginPath();ctx.moveTo(x+CELL-5,y+5);ctx.lineTo(x+5,y+CELL-5);ctx.stroke();
       });
@@ -869,36 +870,25 @@ function gameSerpiente(){
       }
     }
 
-    function gameLoop(ts){
-      if(!alive) return;
-      rafId=requestAnimationFrame(gameLoop);
-      if(ts-lastMoveTs >= getMsPerMove()){
-        lastMoveTs=ts;
-        moveTick();
-        if(!alive) return;
-      }
-      draw();
-    }
-
-    function endAttempt(){
+    function die(){
       if(!alive) return;
       alive=false;
-      cancelAnimationFrame(rafId);
+      clearInterval(tid);
+      clearTimeout(kdelay);
       window.removeEventListener('keydown',onKey);
       let f=0;
       const fl=setInterval(()=>{
-        f++;ctx.fillStyle=`rgba(232,98,94,${.3-f*.06})`;ctx.fillRect(0,0,cv.width,cv.height);
+        f++;ctx.fillStyle=`rgba(232,98,94,${.3-f*.06})`;ctx.fillRect(0,0,CW,CH);
         if(f>=5){clearInterval(fl);recordAttempt(g.id,score);render();}
       },55);
     }
 
     draw();
-    rafId=requestAnimationFrame(gameLoop);
+    tid=setInterval(tick,spd());
   }
 
   render();
 }
-
 /* =====================================================================
    JUEGO 4 — APILAR TILES
 ===================================================================== */
@@ -973,7 +963,7 @@ function gameApilar(){
 
     // la velocidad sube SOLO cuando fallas, de forma fija por cada fallo
     // independientemente de cuántos pixeles se perdieron en ese fallo
-    function speedForMisses(n){ return 1.3 + n * 0.7; }
+    function speedForMisses(n){ return 1.3 + n * 0.35; }
     function resetMoving(){
       const speed = speedForMisses(missCount);
       const dir = Math.random()<0.5?-1:1;
