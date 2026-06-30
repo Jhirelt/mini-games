@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Rifa de Minijuegos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span><h1>Panel de Administración</h1></div>
+    </div>
+
+    <div id="screenLogin" class="card">
+      <div class="eyebrow">Acceso</div>
+      <h2>Llave de administrador</h2>
+      <input type="password" id="adminKey" placeholder="Llave de admin">
+      <div class="row" style="justify-content:center;">
+        <button class="primary-btn" id="loginBtn">Entrar</button>
+      </div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+
+    <div id="screenAdmin" class="card hidden" style="text-align:left;">
+      <div class="admin-section">
+        <h3>Probar minijuegos</h3>
+        <p class="muted">Abre todos los juegos en modo admin — intentos ilimitados, tabla de resultados simulada, puedes saltar de juego en juego libremente.</p>
+        <div class="row">
+          <button class="primary-btn" id="openTestBtn">🎮 Abrir modo de prueba</button>
+          <a class="ghost-btn" href="ruleta.html" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">Abrir pantalla de la ruleta ↗</a>
+        </div>
+      </div>
+        <p class="muted">Un nombre por línea. Se muestra en vivo en <code>/ruleta.html</code> — abre esa página en la pantalla grande antes de girar.</p>
+        <textarea id="wheelNamesInput" placeholder="Juan Pérez&#10;María Vargas&#10;..."></textarea>
+        <div class="row">
+          <button class="primary-btn" id="saveWheelBtn">Guardar nombres de la ruleta</button>
+          <button class="primary-btn" id="spinBtn" style="background:var(--danger);">🎰 Girar ruleta</button>
+          <a class="ghost-btn" href="ruleta.html" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">Abrir pantalla de la ruleta ↗</a>
+        </div>
+        <div class="msg" id="wheelMsg" style="color:var(--accent);"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3>Lista de usuarios de hoy</h3>
+        <p class="muted">Un nombre por línea. Al guardar, se reinician todos los reclamos del día anterior.</p>
+        <textarea id="namesInput" placeholder="Juan Pérez&#10;María Vargas&#10;..."></textarea>
+        <div class="row">
+          <button class="primary-btn" id="saveNamesBtn">Guardar lista (reinicia el día)</button>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <h3>Reto del día</h3>
+        <p class="muted">El minijuego que se selecciona aquí es al que entran los jugadores cuando abren "Ir a jugar". Cambiarlo reinicia los intentos/puntajes de hoy.</p>
+        <div class="row">
+          <select id="todayGameSelect" style="background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;"></select>
+          <button class="primary-btn" id="setTodayBtn">Fijar reto de hoy</button>
+        </div>
+        <div class="msg" id="todayMsg" style="color:var(--accent);"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3>Estado en vivo</h3>
+        <div class="row">
+          <button class="primary-btn" id="startBtn">▶ Iniciar juego para todos</button>
+          <button class="danger-btn" id="resetBtn">Reiniciar día (mantener lista)</button>
+        </div>
+        <table>
+          <thead><tr><th>Usuario</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="statusTable"></tbody>
+        </table>
+      </div>
+
+      <div class="admin-section">
+        <h3>Tabla en vivo — mejores puntajes de hoy</h3>
+        <p class="muted">Solo se muestra el mejor puntaje de cada jugador que ya intentó, actualizado en vivo.</p>
+        <table>
+          <thead><tr><th>#</th><th>Jugador</th><th>Mejor puntaje</th><th>Intentos</th><th></th></tr></thead>
+          <tbody id="leaderboardTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script src="admin.js"></script>
+</body>
+</html>

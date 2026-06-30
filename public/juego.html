@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sala de Juegos — Rifa Diaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:        #13141a;
+    --surface:   #1c1e26;
+    --surface-2: #242732;
+    --border:    #32353f;
+    --text:      #eceef2;
+    --muted:     #8b8e98;
+    --accent:    #6fe3c4;   /* encendido / éxito */
+    --accent-dim:#2b4a42;
+    --danger:    #e8625e;
+    --danger-dim:#4a2b2b;
+    --p-pink:    #ffd2e6;
+    --p-blue:    #cfe6ff;
+    --p-yellow:  #fff1c2;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  body{min-height:100vh;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  #app{max-width:980px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:28px;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+  .brand h1{font-size:18px;letter-spacing:.2px;}
+  .topbar .date{color:var(--muted);font-size:13px;}
+
+  .admin-toggle{margin-top:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .admin-toggle select{background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;}
+  .admin-toggle .tag{background:var(--surface-2);border:1px solid var(--border);padding:2px 8px;border-radius:20px;font-size:11px;color:var(--muted);}
+
+  /* ---------- LOBBY ---------- */
+  .lobby-hero{text-align:center;padding:40px 10px 30px;}
+  .lobby-hero .eyebrow{color:var(--accent);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+  .lobby-hero h2{font-size:34px;margin-top:10px;line-height:1.15;}
+  .lobby-hero p{color:var(--muted);margin-top:10px;font-size:14px;max-width:480px;margin-inline:auto;}
+
+  .spin-btn{margin-top:26px;background:var(--accent);color:#0c1410;font-weight:700;font-size:15px;padding:14px 30px;border-radius:30px;letter-spacing:.3px;transition:transform .15s ease;}
+  .spin-btn:hover{transform:translateY(-2px);}
+  .spin-btn:disabled{opacity:.4;cursor:default;transform:none;}
+
+  /* ---------- ROULETTE ---------- */
+  .wheel-wrap{display:flex;flex-direction:column;align-items:center;padding:30px 0;}
+  .wheel{position:relative;width:280px;height:280px;border-radius:50%;background:conic-gradient(var(--surface-2) 0 20%,var(--surface) 0 40%,var(--surface-2) 0 60%,var(--surface) 0 80%,var(--surface-2) 0 100%);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;transition:transform 3.2s cubic-bezier(.12,.8,.1,1);}
+  .wheel .center{position:absolute;width:64px;height:64px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;}
+  .wheel .seg-label{position:absolute;font-size:11px;color:var(--muted);font-weight:600;text-align:center;width:70px;}
+  .pointer{width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid var(--accent);margin-bottom:-6px;z-index:2;}
+  .wheel-status{margin-top:18px;color:var(--muted);font-size:13px;min-height:18px;}
+  .wheel-result{margin-top:6px;font-size:20px;font-weight:700;}
+
+  /* ---------- GAME GRID (lobby list) ---------- */
+  .game-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:30px;}
+  .game-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;opacity:.45;}
+  .game-card.today{opacity:1;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .game-card .gi{font-size:26px;}
+  .game-card h3{font-size:14px;margin-top:8px;}
+  .game-card .st{font-size:11px;color:var(--muted);margin-top:4px;}
+  .game-card.today .st{color:var(--accent);}
+
+  /* ---------- GAME SCREEN SHELL ---------- */
+  .game-screen{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;margin-top:10px;}
+  .game-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .game-header h2{font-size:20px;}
+  .game-header p{color:var(--muted);font-size:13px;margin-top:4px;max-width:520px;}
+  .back-btn{background:transparent;color:var(--muted);font-size:13px;border:1px solid var(--border);border-radius:20px;padding:6px 14px;}
+  .back-btn:hover{color:var(--text);border-color:var(--text);}
+
+  .hud{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px;font-size:13px;color:var(--muted);}
+  .hud .stat b{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;display:block;}
+  .hud .stat{background:var(--surface-2);border-radius:8px;padding:8px 14px;min-width:90px;}
+
+  .primary-btn{background:var(--accent);color:#0c1410;font-weight:700;font-size:14px;padding:10px 20px;border-radius:8px;}
+  .primary-btn:disabled{opacity:.35;cursor:default;}
+  .ghost-btn{background:var(--surface-2);color:var(--text);font-size:13px;padding:9px 18px;border-radius:8px;border:1px solid var(--border);}
+
+  .result-box{margin-top:18px;background:var(--surface-2);border:1px dashed var(--border);border-radius:10px;padding:16px;font-size:14px;}
+  .result-box .score{font-family:'JetBrains Mono',monospace;font-size:24px;color:var(--accent);}
+  .leader-line{margin-top:8px;color:var(--muted);font-size:13px;}
+  .leader-table{width:100%;margin-top:10px;border-collapse:collapse;font-size:13px;}
+  .leader-table td,.leader-table th{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+  .leader-table th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;}
+  .me-row{color:var(--accent);font-weight:600;}
+
+  /* ---------- GAME 1: REFLEJOS ---------- */
+  .circ-grid{display:grid;grid-template-columns:repeat(3,90px);gap:18px;justify-content:center;margin:26px 0;}
+  .circ{width:90px;height:90px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border);transition:background .08s, transform .08s, box-shadow .15s;}
+  .circ.lit{background:var(--accent);box-shadow:0 0 22px var(--accent);transform:scale(1.08);}
+  .circ.hit{animation:circHit .35s ease-out;}
+  @keyframes circHit{
+    0%{transform:scale(1.25);background:#fff;box-shadow:0 0 30px #fff;}
+    100%{transform:scale(1);}
+  }
+  .reflex-feed{text-align:center;color:var(--muted);font-size:13px;min-height:18px;margin-bottom:4px;}
+
+  /* ---------- GAME 2: MEMORIA ---------- */
+  .mem-grid{display:grid;grid-template-columns:repeat(4,84px);gap:12px;justify-content:center;margin:22px 0;}
+  .mem-card{width:84px;height:84px;border-radius:10px;background:var(--surface-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;transition:background .15s,transform .15s;}
+  .mem-card.flip{background:var(--accent-dim);}
+  .mem-card.matched{background:transparent;border-color:transparent;opacity:.35;cursor:default;}
+  .mem-card.match-pulse{animation:memMatch .4s ease-out;}
+  @keyframes memMatch{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.18);box-shadow:0 0 24px var(--accent);}
+    100%{transform:scale(1);}
+  }
+  .mem-card.wrong-shake{animation:memWrong .35s ease-in-out;}
+  @keyframes memWrong{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  /* ---------- GAME 3: SERPIENTE ---------- */
+  #snakeCanvas{background:var(--surface-2);border-radius:10px;display:block;margin:18px auto;border:1px solid var(--border);}
+
+  /* ---------- GAME 4: APILAR ---------- */
+  #stackCanvas{background:var(--surface-2);border-radius:10px;display:block;margin:18px auto;border:1px solid var(--border);}
+  .stack-wrap{position:relative;width:380px;margin:0 auto;}
+  .stack-feedback{position:absolute;top:8px;left:0;right:0;text-align:center;font-weight:700;font-size:14px;color:var(--accent);pointer-events:none;opacity:0;transition:opacity .15s;}
+  .stack-feedback.show{opacity:1;}
+
+  /* ---------- GAME 6/7: DOODLE & NAVES (canvas genérico) ---------- */
+  #doodleCanvas, #navesCanvas, #zigzagCanvas{background:var(--surface-2);border-radius:10px;display:block;margin:18px auto;border:1px solid var(--border);}
+  /* ---------- GAME 5: CENTRO (barra con aguja) ---------- */
+  .centro-wrap{display:flex;justify-content:center;margin:32px 0;}
+  .centro-bar{
+    position:relative; width:420px; height:44px; border-radius:0; cursor:pointer;
+    background:linear-gradient(to right,
+      #e8625e 0%, #ff9a4d 12%, #ffd24d 25%, #6fe3c4 40%,
+      #4fd9b3 50%,
+      #6fe3c4 60%, #ffd24d 75%, #ff9a4d 88%, #e8625e 100%);
+    border:1px solid var(--border);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.35);
+  }
+  .centro-target{
+    position:absolute; left:50%; top:-8px; bottom:-8px; width:5px; margin-left:-2.5px;
+    background:var(--text); border-radius:0; box-shadow:0 0 6px rgba(255,255,255,.6);
+  }
+  .centro-needle{
+    position:absolute; top:-12px; bottom:-12px; left:0; width:5px;
+    background:var(--accent); border-radius:0; box-shadow:0 0 10px var(--accent);
+  }
+  .centro-click-flash{
+    position:absolute; top:-8px; bottom:-8px; width:18px; margin-left:-9px;
+    border-radius:50%; background:rgba(255,255,255,.85); pointer-events:none;
+    animation:centroFlash .35s ease-out forwards;
+  }
+  @keyframes centroFlash{
+    0%{opacity:1; transform:scale(.4);}
+    100%{opacity:0; transform:scale(2.2);}
+  }
+
+  .live-leaderboard{margin-top:24px;text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .live-leaderboard h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;}
+  .live-leaderboard table{width:100%;border-collapse:collapse;font-size:13px;}
+  .live-leaderboard td,.live-leaderboard th{padding:7px 8px;border-bottom:1px solid var(--border);text-align:left;}
+  .live-leaderboard th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;}
+  .live-leaderboard .me-row{color:var(--accent);font-weight:700;}
+  .live-leaderboard .empty{color:var(--muted);font-size:13px;padding:6px 0;}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:50px;}
+
+  @media (max-width:480px){
+    .mem-grid{grid-template-columns:repeat(4,68px);}
+    .mem-card{width:68px;height:68px;font-size:28px;}
+    .wheel{width:230px;height:230px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div>
+      <div class="brand"><span class="dot"></span><h1>Sala de Juegos — Rifa Diaria</h1></div>
+      <div class="admin-toggle" id="adminPanel">
+        <span class="tag" style="background:#6fe3c424;border-color:var(--accent);color:var(--accent);">🛠 Modo Admin</span>
+        <select id="adminGameSelect" title="Jugar este juego"></select>
+        <button class="ghost-btn" id="adminPlayBtn" style="padding:3px 12px;font-size:12px;background:var(--accent);color:#0c1410;font-weight:700;">▶ Jugar</button>
+        <button class="ghost-btn" id="toggleRevealBtn" style="padding:3px 10px;font-size:11px;" title="Simular la tabla de resultados de la última hora">📊 Revelar tabla</button>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;">
+          <input type="checkbox" id="unlimitedToggle"> ∞ Sin límite de intentos
+        </label>
+        <span id="modeTag" style="font-size:11px;color:var(--muted);"></span>
+      </div>
+    </div>
+    <div class="date mono" id="todayDate"></div>
+  </div>
+
+  <main id="screen"></main>
+
+  <footer>Prototipo interno — modo de juego del día fijado por administración.</footer>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* =====================================================================
+   DATA / ESTADO GLOBAL
+===================================================================== */
+const GAMES = [
+  {id:'reflejos', icon:'⚡', name:'Reflejos', desc:'5 veces en 30 segundos se enciende un círculo. Clickéalo tan rápido como puedas. Puntaje: promedio de reacción en ms (menor = mejor).', lowerIsBetter:true},
+  {id:'memoria',  icon:'🃏', name:'Memoria',  desc:'Encuentra las 8 parejas. Puntaje: segundos que tardaste (menor = mejor).', lowerIsBetter:true},
+  {id:'serpiente',icon:'🟩', name:'Serpiente',desc:'Come manzanas, evita tu cuerpo y las X. La serpiente se mueve más rápido mientras más larga. Puntaje: manzanas comidas.'},
+  {id:'apilar',   icon:'🟫', name:'Apilar Tiles',desc:'Suelta el bloque sobre el anterior. Perfecto = sin recorte. Mientras menos ancho, más rápido se mueve. Puntaje: pisos alcanzados.'},
+  {id:'centro',   icon:'🎯', name:'Centro',  desc:'Haz clic cuando la aguja esté en el centro de la barra. 5 rondas, cada una más rápida. Puntaje: promedio de precisión %.'},
+  {id:'doodle',   icon:'🦘', name:'Doodle Jump',desc:'Muévete con las flechas. Rebotas solo en las plataformas. Verdes: infinitas, Naranjas: 2 saltos, Rojas: 1 salto. Puntaje: altura alcanzada.'},
+  {id:'naves',    icon:'🚀', name:'Naves',desc:'Esquiva los meteoritos con las flechas. Cada 5 s recibes un cohete (Espacio para disparar). Si te quedas quieto 3 s, un meteorito te apunta. Puntaje: segundos sobrevivido.'},
+  {id:'zigzag',   icon:'🔵', name:'Zigzag',   desc:'Clic para doblar la dirección. Sigue la pista o caes. Puntaje: segundos sobrevivido.'},
+];
+
+// ---------------------------------------------------------------------------
+// MODO JUGADOR REAL vs MODO ADMIN
+// ---------------------------------------------------------------------------
+const urlParams = new URLSearchParams(location.search);
+const REAL_NAME    = urlParams.get('name');
+const REAL_SESSION = urlParams.get('session');
+const ADMIN_KEY_URL= urlParams.get('admin');   // ?admin=TU_CLAVE -> modo admin
+const REAL_MODE    = !!(REAL_NAME && REAL_SESSION);
+
+// El panel admin solo se muestra cuando:
+//  1. La URL trae ?admin=KEY  (enlace de admin desde admin.html)
+//  2. No hay parámetros de jugador real (?name / ?session)
+// En cualquier otro caso queda oculto.
+const adminPanel = document.getElementById('adminPanel');
+if(REAL_MODE || !ADMIN_KEY_URL){
+  if(adminPanel) adminPanel.style.display = 'none';
+  const ft = document.querySelector('footer');
+  if(ft) ft.style.display = 'none';
+}
+
+let socket = null;
+let realModeBooted = false;
+
+const state = {
+  todayGameId: GAMES[0].id,
+  revealLeaderboard: false,
+  adminUnlimited: false,
+  attempts: {},
+  mockBoards: {},
+  serverResults: {},
+  serverStarted: false,
+};
+
+const MOCK_RANGES = {
+  reflejos:  [220, 650],
+  memoria:   [25, 90],
+  serpiente: [4, 22],
+  apilar:    [3, 16],
+  centro:    [55, 92],
+  doodle:    [8, 60],
+  naves:     [5, 45],
+  zigzag:    [8, 50],
+};
+
+GAMES.forEach(g=>{
+  state.attempts[g.id] = [];
+  const n = 5 + Math.floor(Math.random()*6);
+  const names = ['M. Rojas','J. Vargas','K. Solano','D. Pérez','A. Mora','L. Chinchilla','F. Salas','P. Araya','G. Bran','S. Quesada'];
+  const shuffled = names.slice().sort(()=>Math.random()-0.5).slice(0,n);
+  const scoreRange = MOCK_RANGES[g.id] || (g.lowerIsBetter ? [220,650] : [5,40]);
+  state.mockBoards[g.id] = shuffled.map(nm=>({name:nm, score: scoreRange[0]+Math.floor(Math.random()*(scoreRange[1]-scoreRange[0]))}))
+                                    .sort((a,b)=> g.lowerIsBetter ? a.score-b.score : b.score-a.score);
+});
+
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('es-CR',{weekday:'long',day:'2-digit',month:'long'});
+
+const adminSelect = document.getElementById('adminGameSelect');
+GAMES.forEach(g=>{
+  const opt = document.createElement('option');
+  opt.value = g.id; opt.textContent = g.icon+' '+g.name;
+  adminSelect.appendChild(opt);
+});
+adminSelect.value = state.todayGameId;
+
+// Botón "▶ Jugar" abre el juego seleccionado en el selector directamente
+document.getElementById('adminPlayBtn').addEventListener('click', ()=>{
+  const gameId = adminSelect.value;
+  state.todayGameId = gameId;
+  // resetea intentos de este juego para poder probar de nuevo
+  if(state.adminUnlimited){ state.attempts[gameId] = []; }
+  openGame(gameId);
+});
+
+adminSelect.addEventListener('change', e=>{
+  state.todayGameId = e.target.value;
+  renderLobby();
+});
+
+document.getElementById('toggleRevealBtn').addEventListener('click', ()=>{
+  state.revealLeaderboard = !state.revealLeaderboard;
+  document.getElementById('modeTag').textContent =
+    state.revealLeaderboard ? '📊 tabla visible' : '';
+});
+
+document.getElementById('unlimitedToggle').addEventListener('change', e=>{
+  state.adminUnlimited = e.target.checked;
+  // resetea todos los intentos para probar libremente
+  if(state.adminUnlimited){ GAMES.forEach(g=>{ state.attempts[g.id]=[]; }); }
+  renderLobby();
+});
+
+const screen = document.getElementById('screen');
+
+function todayGame(){ return GAMES.find(g=>g.id===state.todayGameId); }
+function bestScore(gameId){
+  const g = GAMES.find(x=>x.id===gameId);
+  if(REAL_MODE){
+    const arr = state.serverResults[REAL_NAME] || [];
+    if(!arr.length) return null;
+    return g.lowerIsBetter ? Math.min(...arr.map(a=>a.score)) : Math.max(...arr.map(a=>a.score));
+  }
+  const arr = state.attempts[gameId];
+  if(!arr.length) return null;
+  return g.lowerIsBetter ? Math.min(...arr.map(a=>a.score)) : Math.max(...arr.map(a=>a.score));
+}
+
+/* =====================================================================
+   LOBBY
+===================================================================== */
+function renderLobby(){
+  const tg = todayGame();
+  screen.innerHTML = `
+    <div class="lobby-hero">
+      <div class="eyebrow">Concurso del día</div>
+      <h2>${tg.icon} Hoy te toca: ${tg.name}</h2>
+      <p>${tg.desc}</p>
+      <p>Tienes hasta 2 intentos. Se guarda tu mejor puntaje. El cierre es automático al final de la jornada.</p>
+      <button class="spin-btn" id="playTodayBtn">Jugar reto de hoy</button>
+    </div>
+    <div class="game-grid" id="gameGrid"></div>
+  `;
+  const grid = document.getElementById('gameGrid');
+  GAMES.forEach(g=>{
+    const isToday = g.id === tg.id;
+    const best = bestScore(g.id);
+    const card = document.createElement('div');
+    card.className = 'game-card' + (isToday ? ' today' : '');
+    card.innerHTML = `
+      <div class="gi">${g.icon}</div>
+      <h3>${g.name}</h3>
+      <div class="st">${isToday ? (best!==null ? 'Jugado · mejor: '+best : 'Activo hoy') : 'No disponible hoy'}</div>
+    `;
+    grid.appendChild(card);
+  });
+  document.getElementById('playTodayBtn').addEventListener('click', ()=> openGame(tg.id));
+}
+
+/* =====================================================================
+   NAVEGACIÓN A JUEGOS
+===================================================================== */
+function openGame(id){
+  const cleanups = { current: null };
+  switch(id){
+    case 'reflejos': cleanups.current = gameReflejos(); break;
+    case 'memoria':  cleanups.current = gameMemoria(); break;
+    case 'serpiente':cleanups.current = gameSerpiente(); break;
+    case 'apilar':   cleanups.current = gameApilar(); break;
+    case 'centro':   cleanups.current = gameCentro(); break;
+    case 'doodle':   cleanups.current = gameDoodle(); break;
+    case 'naves':    cleanups.current = gameNaves(); break;
+    case 'zigzag':   cleanups.current = gameZigzag(); break;
+  }
+}
+
+function gameShellHeader(g){
+  return `
+    <div class="game-header">
+      <div><h2>${g.icon} ${g.name}</h2></div>
+      <button class="back-btn" id="backBtn">← Volver</button>
+    </div>
+  `;
+}
+function bindBack(){
+  document.getElementById('backBtn').addEventListener('click', REAL_MODE ? renderRealStatus : renderLobby);
+}
+
+// arranca el juego con Enter O Espacio (además del clic en el botón)
+function bindStartKeys(btnId){
+  const btn = document.getElementById(btnId);
+  if(!btn || btn.disabled) return;
+  function onKey(e){
+    if(e.key==='Enter' || e.code==='Space'){
+      e.preventDefault();
+      window.removeEventListener('keydown', onKey);
+      btn.click();
+    }
+  }
+  window.addEventListener('keydown', onKey);
+  btn._startKeyCleanup = ()=> window.removeEventListener('keydown', onKey);
+}
+// alias para compatibilidad con las llamadas existentes
+const bindEnterStart = bindStartKeys;
+
+// muestra pantalla de "intento terminado" antes de re-renderizar el juego
+function showAttemptDone(gameId, score, then){
+  const g = GAMES.find(x=>x.id===gameId);
+  const left = attemptsLeft(gameId);
+  const unit = g.lowerIsBetter ? ' ms' : '';
+  screen.innerHTML = `
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:52px;margin-bottom:14px;">✅</div>
+      <div style="font-size:15px;color:var(--muted);margin-bottom:6px;">Puntaje del intento</div>
+      <div style="font-size:52px;font-weight:900;color:var(--accent);letter-spacing:-2px;">${score}${unit}</div>
+      <div style="color:var(--muted);font-size:14px;margin-top:16px;">
+        ${left>0 ? `Intento guardado. Te queda <b>${left}</b>.` : 'Usaste tus 2 intentos de hoy.'}
+      </div>
+    </div>
+  `;
+  setTimeout(then, 2000);
+}
+
+function attemptsLeft(gameId){
+  if(REAL_MODE){
+    const arr = state.serverResults[REAL_NAME] || [];
+    return Math.max(0, 2 - arr.length);
+  }
+  if(state.adminUnlimited) return Infinity;
+  return 2 - state.attempts[gameId].length;
+}
+function attemptsLabel(gameId){
+  const left = attemptsLeft(gameId);
+  return left === Infinity ? '∞' : left;
+}
+
+// registra un intento. En modo real, el servidor es quien manda: se actualiza
+// el contador local de inmediato (para que el resultado se vea correcto sin
+// esperar la respuesta de red), y de fondo se confirma con el servidor — si
+// el servidor lo rechaza (por ejemplo, ya se usaron los 2 intentos por una
+// carrera entre pestañas), se avisa y la siguiente actualización en vivo del
+// servidor corrige cualquier cosa que se haya mostrado de más.
+function recordAttempt(gameId, score){
+  if(REAL_MODE){
+    if(!state.serverResults[REAL_NAME]) state.serverResults[REAL_NAME] = [];
+    state.serverResults[REAL_NAME].push({score, ts:Date.now()});
+    fetch('/api/attempt', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: REAL_NAME, sessionId: REAL_SESSION, score }),
+    })
+      .then(r=>r.json().then(data=>({ok:r.ok, data})))
+      .then(({ok, data})=>{
+        if(!ok){
+          const slot = document.getElementById('resultSlot');
+          if(slot) slot.innerHTML = `<div class="result-box" style="border-color:var(--danger);">${(data&&data.error)||'No se pudo guardar el intento.'}</div>`;
+        }
+      })
+      .catch(()=>{
+        const slot = document.getElementById('resultSlot');
+        if(slot) slot.innerHTML = `<div class="result-box" style="border-color:var(--danger);">Sin conexión — revisa tu red e inténtalo de nuevo.</div>`;
+      });
+    // feedback visual inmediato de "intento terminado" antes de regresar al juego
+    showAttemptDone(gameId, score, ()=> openGame(gameId));
+    return;
+  }
+  state.attempts[gameId].push({score, ts:Date.now()});
+}
+
+function renderResultBox(gameId, lastScore){
+  const g = GAMES.find(x=>x.id===gameId);
+  const best = bestScore(gameId);
+  const unit = g.lowerIsBetter ? ' ms' : '';
+
+  if(REAL_MODE){
+    // en modo real, recordAttempt ya llama showAttemptDone que muestra la pantalla
+    // de feedback; esta función solo se usa en el modo demo/admin
+    setTimeout(()=> renderLiveLeaderboard(gameId), 0);
+    return `
+      <div class="result-box">
+        <div class="score">${best}${unit}</div>
+        <div class="live-leaderboard" style="margin-top:14px;">
+          <h3>🏆 Mejores puntajes de hoy (en vivo)</h3>
+          <div id="liveLeaderboardBody"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  const board = state.mockBoards[gameId];
+  const ahead = g.lowerIsBetter ? board.filter(p=>p.score < best).length : board.filter(p=>p.score > best).length;
+
+  let leaderHtml = '';
+  if(state.revealLeaderboard){
+    const full = board.concat([{name:'Tú', score:best, me:true}]).sort((a,b)=> g.lowerIsBetter ? a.score-b.score : b.score-a.score);
+    leaderHtml = `<table class="leader-table"><thead><tr><th>#</th><th>Jugador</th><th>Puntaje</th></tr></thead><tbody>
+      ${full.map((p,i)=>`<tr class="${p.me?'me-row':''}"><td>${i+1}</td><td>${p.me?'Tú':p.name}</td><td>${p.score}${unit}</td></tr>`).join('')}
+    </tbody></table>`;
+  } else {
+    leaderHtml = `<div class="leader-line">${ahead===0 ? '¡Vas en primer lugar!' : `Hay ${ahead} jugador${ahead>1?'es':''} por delante de ti.`}</div>`;
+  }
+
+  return `
+    <div class="result-box">
+      <div class="score">${best}${unit}</div>
+      ${leaderHtml}
+    </div>
+  `;
+}
+
+/* =====================================================================
+   JUEGO 1 — REFLEJOS (9 círculos en fila, 5 aciertos en 30s)
+===================================================================== */
+function gameReflejos(){
+  const g = GAMES.find(x=>x.id==='reflejos');
+  const TOTAL_MS = 30000;
+  let timeouts = [], startTs = 0, reactions = [], litIndex = -1, litAt = 0, awaitingClick = false, ended = false;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Tiempo<br><b id="hudTime">30s</b></div>
+        <div class="stat">Aciertos<br><b id="hudHits">0/5</b></div>
+      </div>
+      <div class="reflex-feed" id="reflexFeed">Presiona iniciar y espera... las luces aparecen en momentos al azar.</div>
+      <div class="circ-grid" id="circGrid">
+        ${Array.from({length:9}).map((_,i)=>`<div class="circ" data-i="${i}"></div>`).join('')}
+      </div>
+      <div style="text-align:center;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    reactions = []; ended = false; awaitingClick = false; litIndex = -1;
+    startTs = performance.now();
+
+    // 5 momentos aleatorios dentro de los 30s, con separación mínima entre ellos
+    const minGap = 3500, lastSafe = TOTAL_MS - 1500;
+    let moments = [];
+    let cursor = 800; // pequeño margen inicial
+    for(let i=0;i<5;i++){
+      const remainingSlots = 5 - i;
+      const maxStart = lastSafe - (remainingSlots-1)*minGap;
+      const t = cursor + Math.random()*Math.max(300, (maxStart - cursor)/remainingSlots);
+      moments.push(Math.min(t, lastSafe));
+      cursor = moments[i] + minGap;
+    }
+
+    moments.forEach((t)=>{
+      const handle = setTimeout(()=> lightOne(), t);
+      timeouts.push(handle);
+    });
+
+    // contador visual de tiempo restante
+    let timeLeft = 30;
+    const clockInterval = setInterval(()=>{
+      timeLeft--;
+      const el = document.getElementById('hudTime');
+      if(el) el.textContent = Math.max(timeLeft,0)+'s';
+      if(timeLeft<=0){ clearInterval(clockInterval); }
+    },1000);
+    timeouts.push(clockInterval);
+
+    timeouts.push(setTimeout(()=> finishIfNeeded(), TOTAL_MS + 1200));
+
+    document.getElementById('circGrid').onclick = onCircClick;
+  }
+
+  function lightOne(){
+    if(ended) return;
+    document.querySelectorAll('.circ').forEach(c=>c.classList.remove('lit'));
+    const i = Math.floor(Math.random()*9);
+    litIndex = i; litAt = performance.now(); awaitingClick = true;
+    const el = document.querySelector(`.circ[data-i="${i}"]`);
+    if(el) el.classList.add('lit');
+    const feed = document.getElementById('reflexFeed');
+    if(feed) feed.textContent = `¡Ronda ${reactions.length+1}! Haz clic en el círculo encendido.`;
+  }
+
+  function onCircClick(e){
+    if(!awaitingClick) return;
+    const target = e.target.closest('.circ');
+    if(!target) return;
+    const idx = parseInt(target.dataset.i,10);
+    if(idx === litIndex){
+      const rt = Math.round(performance.now() - litAt);
+      reactions.push(rt);
+      awaitingClick = false;
+      target.classList.remove('lit');
+      target.classList.add('hit');
+      setTimeout(()=> target.classList.remove('hit'), 350);
+      document.getElementById('hudHits').textContent = reactions.length+'/5';
+      const feed = document.getElementById('reflexFeed');
+      if(feed) feed.textContent = `¡Acierto! Reacción: ${rt} ms. Esperando la siguiente luz...`;
+      if(reactions.length>=5) finishIfNeeded();
+    }
+  }
+
+  function finishIfNeeded(){
+    if(ended) return;
+    ended = true;
+    timeouts.forEach(h=>{ clearTimeout(h); clearInterval(h); });
+    document.querySelectorAll('.circ').forEach(c=>c.classList.remove('lit'));
+    const grid = document.getElementById('circGrid');
+    if(grid) grid.onclick = null;
+    while(reactions.length<5) reactions.push(3000); // penalización si no completó
+    const avgMs = Math.round(reactions.reduce((a,b)=>a+b,0)/reactions.length);
+    recordAttempt(g.id, avgMs);
+    render();
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 2 — MEMORIA (4x4, 8 parejas)
+===================================================================== */
+function gameMemoria(){
+  const g = GAMES.find(x=>x.id==='memoria');
+  const symbols = ['🍒','🍋','🍇','🍉','🍓','🥝','🍑','🍍'];
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Movimientos<br><b id="hudMoves">0</b></div>
+        <div class="stat">Tiempo<br><b id="hudTime" class="mono">0s</b></div>
+      </div>
+      <div id="boardSlot"></div>
+      <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    let deck = symbols.concat(symbols).sort(()=>Math.random()-0.5);
+    let flipped = [], matched = 0, moves = 0, seconds = 0, locked = false;
+
+    document.getElementById('boardSlot').innerHTML = `<div class="mem-grid" id="memGrid"></div>`;
+    const gridEl = document.getElementById('memGrid');
+    deck.forEach((sym,i)=>{
+      const card = document.createElement('div');
+      card.className = 'mem-card';
+      card.dataset.i = i;
+      card.dataset.sym = sym;
+      gridEl.appendChild(card);
+    });
+
+    const tick = setInterval(()=>{
+      seconds++;
+      document.getElementById('hudTime').textContent = seconds+'s';
+    },1000);
+
+    gridEl.addEventListener('click', e=>{
+      if(locked) return;
+      const card = e.target.closest('.mem-card');
+      if(!card || card.classList.contains('flip') || card.classList.contains('matched')) return;
+      card.classList.add('flip');
+      card.textContent = card.dataset.sym;
+      flipped.push(card);
+      if(flipped.length===2){
+        moves++;
+        document.getElementById('hudMoves').textContent = moves;
+        locked = true;
+        const [a,b] = flipped;
+        if(a.dataset.sym === b.dataset.sym){
+          a.classList.add('match-pulse'); b.classList.add('match-pulse');
+          setTimeout(()=>{
+            a.classList.add('matched'); b.classList.add('matched');
+            a.classList.remove('match-pulse'); b.classList.remove('match-pulse');
+            a.textContent=''; b.textContent='';
+          }, 380);
+          matched += 2;
+          flipped = []; locked = false;
+          if(matched === deck.length) setTimeout(finish, 420);
+        } else {
+          a.classList.add('wrong-shake'); b.classList.add('wrong-shake');
+          setTimeout(()=>{
+            a.classList.remove('flip','wrong-shake'); b.classList.remove('flip','wrong-shake');
+            a.textContent=''; b.textContent='';
+            flipped = []; locked = false;
+          },650);
+        }
+      }
+    });
+
+    function finish(){
+      clearInterval(tick);
+      recordAttempt(g.id, seconds);
+      render();
+    }
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 3 — SERPIENTE
+===================================================================== */
+function gameSerpiente(){
+  const g = GAMES.find(x=>x.id==='serpiente');
+  const CELL = 24, COLS = 26, ROWS = 20;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Puntos<br><b id="hudScore">0</b></div>
+        <div class="stat">Velocidad<br><b id="hudSpeed">1.0x</b></div>
+      </div>
+      <canvas id="snakeCanvas" width="${COLS*CELL}" height="${ROWS*CELL}"></canvas>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+        <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'Iniciar'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+    drawIdle();
+  }
+
+  function drawIdle(){
+    const cv = document.getElementById('snakeCanvas');
+    if(!cv) return;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#1a1b24'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = .5;
+    for(let x=0;x<COLS;x++){ ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,cv.height); ctx.stroke(); }
+    for(let y=0;y<ROWS;y++){ ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(cv.width,y*CELL); ctx.stroke(); }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const cv = document.getElementById('snakeCanvas');
+    const ctx = cv.getContext('2d');
+
+    // dir y nextDir son OBJETOS DISTINTOS siempre — nunca se comparten referencias
+    let dir     = {x:1, y:0};
+    let nextDir = {x:1, y:0};
+    let snake = [{x:8,y:7},{x:7,y:7},{x:6,y:7}];
+    let food = randomFood();
+    let poisons = spawnPoisons();
+    let score = 0, alive = true, eatFlash = 0;
+    let loopTimeout = null;
+
+    // velocidad: starts 145ms, decreases 4ms per apple, min 48ms (~3x faster)
+    function getInterval(){ return Math.max(48, 145 - score * 4); }
+
+    function occupied(extra=[]){ return snake.concat(extra); }
+    function randomFood(){
+      let f, tries=0;
+      do{ f = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; tries++; }
+      while(tries<500 && occupied().some(s=>s.x===f.x&&s.y===f.y));
+      return f;
+    }
+    function spawnPoisons(){
+      const count = 4 + Math.floor(score/3);
+      const arr = []; let attempts = 0;
+      while(arr.length < count && attempts < 200){
+        attempts++;
+        const p = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)};
+        const blocked = occupied(arr).some(s=>s.x===p.x&&s.y===p.y) || (p.x===food.x&&p.y===food.y);
+        if(!blocked) arr.push(p);
+      }
+      return arr;
+    }
+
+    function keyHandler(e){
+      const k = e.key.toLowerCase();
+      if((k==='arrowup'   ||k==='w') && dir.y===0) nextDir={x:0,y:-1};
+      else if((k==='arrowdown' ||k==='s') && dir.y===0) nextDir={x:0,y:1};
+      else if((k==='arrowleft' ||k==='a') && dir.x===0) nextDir={x:-1,y:0};
+      else if((k==='arrowright'||k==='d') && dir.x===0) nextDir={x:1,y:0};
+    }
+    window.addEventListener('keydown', keyHandler);
+
+    function tick(){
+      if(!alive) return;
+      // copiar nextDir a dir (nunca compartir referencias)
+      dir = {x:nextDir.x, y:nextDir.y};
+      const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+      const willEat = (head.x===food.x && head.y===food.y);
+      const bodyToCheck = willEat ? snake : snake.slice(0,-1);
+      const hitsPoison = poisons.some(p=>p.x===head.x&&p.y===head.y);
+      if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS
+        ||bodyToCheck.some(s=>s.x===head.x&&s.y===head.y)||hitsPoison){
+        endAttempt(); return;
+      }
+      snake.unshift(head);
+      if(willEat){
+        score++;
+        const speedEl = document.getElementById('hudSpeed');
+        const scoreEl = document.getElementById('hudScore');
+        if(scoreEl) scoreEl.textContent = score;
+        if(speedEl) speedEl.textContent = (145/getInterval()).toFixed(1)+'x';
+        food = randomFood();
+        poisons = spawnPoisons();
+        eatFlash = 2;
+      } else {
+        snake.pop();
+      }
+      draw();
+      // programa el siguiente frame con el intervalo actualizado
+      loopTimeout = setTimeout(tick, getInterval());
+    }
+
+    function drawSegment(sx, sy, color, isHead){
+      const x=sx*CELL+1,y=sy*CELL+1,w=CELL-2,h=CELL-2;
+      ctx.fillStyle=color; ctx.fillRect(x,y,w,h);
+      ctx.fillStyle='rgba(255,255,255,.28)';
+      ctx.fillRect(x,y,w,4); ctx.fillRect(x,y,4,h);
+      ctx.fillStyle='rgba(0,0,0,.30)';
+      ctx.fillRect(x,y+h-4,w,4); ctx.fillRect(x+w-4,y,4,h);
+      if(isHead){
+        ctx.fillStyle='#fff';
+        const ex1=dir.x!==0?w*.58:w*.3, ey1=dir.y!==0?h*.58:h*.3;
+        const ex2=dir.x!==0?w*.58:w*.68, ey2=dir.y!==0?h*.58:h*.68;
+        [[ex1,ey1],[ex2,ey2]].forEach(([ex,ey])=>{
+          ctx.beginPath(); ctx.arc(x+ex,y+ey,2.8,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#1a1b24'; ctx.beginPath(); ctx.arc(x+ex+.6,y+ey+.6,1.3,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#fff';
+        });
+      }
+    }
+
+    function drawFood(fx,fy){
+      const cx=fx*CELL+CELL/2,cy=fy*CELL+CELL/2,r=CELL/2-3;
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(cx,cy+r*.7,r*.75,r*.3,0,0,Math.PI*2); ctx.fill();
+      const gr=ctx.createRadialGradient(cx-r*.3,cy-r*.3,1,cx,cy,r);
+      gr.addColorStop(0,'#afffb0'); gr.addColorStop(.7,'#4ece70'); gr.addColorStop(1,'#2e8a40');
+      ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.5)';
+      ctx.beginPath(); ctx.arc(cx-r*.28,cy-r*.28,r*.25,0,Math.PI*2); ctx.fill();
+    }
+
+    function draw(){
+      ctx.fillStyle = eatFlash>0 ? '#252a30' : '#1a1b24';
+      ctx.fillRect(0,0,cv.width,cv.height);
+      if(eatFlash>0) eatFlash--;
+      ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=.5;
+      for(let x=0;x<COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,cv.height);ctx.stroke();}
+      for(let y=0;y<ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(cv.width,y*CELL);ctx.stroke();}
+      drawFood(food.x, food.y);
+      poisons.forEach(p=>{
+        const x=p.x*CELL, y=p.y*CELL;
+        ctx.strokeStyle='#FF6B6B'; ctx.lineWidth=2.8;
+        ctx.shadowColor='#FF6B6B'; ctx.shadowBlur=8;
+        ctx.beginPath(); ctx.moveTo(x+5,y+5); ctx.lineTo(x+CELL-5,y+CELL-5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+CELL-5,y+5); ctx.lineTo(x+5,y+CELL-5); ctx.stroke();
+        ctx.shadowBlur=0;
+      });
+      for(let i=snake.length-1;i>=0;i--){
+        const t=i/snake.length;
+        const color=i===0?'#E4B5FF':`hsl(${272+t*22},72%,${36+t*14}%)`;
+        drawSegment(snake[i].x,snake[i].y,color,i===0);
+      }
+    }
+
+    function endAttempt(){
+      if(!alive) return;
+      alive=false;
+      clearTimeout(loopTimeout);
+      window.removeEventListener('keydown',keyHandler);
+      // feedback final: flash rojo antes de mostrar resultado
+      let frame=0;
+      const flashLoop=setInterval(()=>{
+        frame++;
+        ctx.fillStyle=`rgba(232,98,94,${0.25-frame*.05})`;
+        ctx.fillRect(0,0,cv.width,cv.height);
+        if(frame>=5){ clearInterval(flashLoop); recordAttempt(g.id,score); render(); }
+      },60);
+    }
+
+    draw();
+    loopTimeout = setTimeout(tick, getInterval());
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 4 — APILAR TILES
+===================================================================== */
+function gameApilar(){
+  const g = GAMES.find(x=>x.id==='apilar');
+  const W = 380, H = 480, BASE_W = 190, BLOCK_H = 32;
+
+  // paleta estilo tienda de juguetes — brillante, saturada, divertida
+  const TOY_PALETTE = [
+    '#FF6B6B','#FF9F43','#FECA57','#48DBFB','#1DD1A1',
+    '#FF6EB4','#A29BFE','#6C5CE7','#00CEC9','#FDCB6E',
+    '#E17055','#74B9FF','#55EFC4','#FD79A8','#B2BEC3',
+    '#E84393','#00B894','#0984E3','#D63031','#6AB04C',
+  ];
+  function randomColor(excludeColor){
+    const filtered = excludeColor ? TOY_PALETTE.filter(c=>c!==excludeColor) : TOY_PALETTE;
+    return filtered[Math.floor(Math.random()*filtered.length)];
+  }
+  function lighten(hex, amt=60){
+    const n = parseInt(hex.slice(1),16);
+    const r=Math.min(255,(n>>16)+amt), g=Math.min(255,((n>>8)&0xff)+amt), b=Math.min(255,(n&0xff)+amt);
+    return `rgb(${r},${g},${b})`;
+  }
+  function darken(hex, amt=60){
+    const n = parseInt(hex.slice(1),16);
+    const r=Math.max(0,(n>>16)-amt), g=Math.max(0,((n>>8)&0xff)-amt), b=Math.max(0,(n&0xff)-amt);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Piso<br><b id="hudLayer">0</b></div>
+      </div>
+      <div class="stack-wrap">
+        <div class="stack-feedback" id="stackFeedback">✨ Perfecto!</div>
+        <canvas id="stackCanvas" width="${W}" height="${H}"></canvas>
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:-6px;">Clic o Espacio para soltar</div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+    const cv = document.getElementById('stackCanvas');
+    if(cv){ const ctx=cv.getContext('2d'); ctx.fillStyle='#1a1b24'; ctx.fillRect(0,0,W,H); }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const cv = document.getElementById('stackCanvas');
+    const ctx = cv.getContext('2d');
+    const feedbackEl = document.getElementById('stackFeedback');
+
+    const baseColor = randomColor();
+    let stack = [{x:W/2-BASE_W/2, w:BASE_W, color:baseColor, perfect:true}];
+    let layer = 0;
+    let curW = BASE_W;
+    let curColor = baseColor;
+    let moving = null;
+    let dropping = false;
+    let alive = true;
+
+    function speedForWidth(w){
+      const lostRatio = 1-(w/BASE_W); // 0=nada perdido → 1=casi todo perdido
+      // curva exponencial: casi quieto al inicio, muy rápido al final
+      return 1.2 + Math.pow(lostRatio, 1.6) * 9.5;
+    }
+    function resetMoving(){
+      const speed = speedForWidth(curW);
+      const dir = Math.random()<0.5?-1:1;
+      moving = {x:dir===1?0:(W-curW), w:curW, dir, speed, color:curColor};
+    }
+    resetMoving();
+
+    function flashPerfect(){
+      feedbackEl.classList.add('show');
+      setTimeout(()=>feedbackEl.classList.remove('show'),600);
+    }
+
+    function dropBlock(){
+      if(!alive||dropping) return;
+      dropping = true;
+      const prev = stack[stack.length-1];
+      const left = Math.max(moving.x, prev.x);
+      const right = Math.min(moving.x+moving.w, prev.x+prev.w);
+      let overlap = right-left;
+      let newX = left;
+      let isPerfect = false;
+      let newColor;
+
+      if(Math.abs(moving.x-prev.x)<=4){
+        overlap = prev.w; newX = prev.x; isPerfect = true;
+        newColor = prev.color; // perfecto: conserva el color del tile anterior
+      } else {
+        newColor = randomColor(prev.color); // no perfecto: cambia a color nuevo
+      }
+
+      if(overlap<=0){ finish(); return; }
+
+      stack.push({x:newX, w:overlap, color:newColor, perfect:isPerfect});
+      layer++;
+      curW = overlap;
+      curColor = newColor;
+      document.getElementById('hudLayer').textContent = layer;
+      if(isPerfect) flashPerfect();
+      resetMoving();
+      dropping = false;
+    }
+
+    function keyHandler(e){ if(e.code==='Space'){e.preventDefault(); dropBlock();} }
+    window.addEventListener('keydown', keyHandler);
+    cv.onclick = dropBlock;
+
+    const loop = setInterval(()=>{
+      if(!alive||dropping){draw(); return;}
+      moving.x += moving.dir*moving.speed;
+      if(moving.x<=0){moving.x=0; moving.dir=1;}
+      if(moving.x+moving.w>=W){moving.x=W-moving.w; moving.dir=-1;}
+      draw();
+    },20);
+
+    // dibuja un bloque con efecto 3D (cara principal + bisel superior claro + bisel inferior oscuro + sombra)
+    function drawBlock3d(x, y, w, h, color){
+      const DEPTH = 5;
+      // sombra proyectada
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ctx.fillRect(x+DEPTH, y+DEPTH, w, h);
+      // cara lateral derecha (oscura)
+      ctx.fillStyle = darken(color, 55);
+      ctx.beginPath();
+      ctx.moveTo(x+w, y); ctx.lineTo(x+w+DEPTH, y-DEPTH);
+      ctx.lineTo(x+w+DEPTH, y+h-DEPTH); ctx.lineTo(x+w, y+h);
+      ctx.closePath(); ctx.fill();
+      // cara superior (clara)
+      ctx.fillStyle = lighten(color, 55);
+      ctx.beginPath();
+      ctx.moveTo(x, y); ctx.lineTo(x+DEPTH, y-DEPTH);
+      ctx.lineTo(x+w+DEPTH, y-DEPTH); ctx.lineTo(x+w, y);
+      ctx.closePath(); ctx.fill();
+      // cara frontal principal
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+      // bisel interno (highlight)
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.fillRect(x+2, y+2, w-4, 3);
+      ctx.fillRect(x+2, y+2, 3, h-4);
+    }
+
+    function draw(){
+      // fondo degradado oscuro
+      const bg = ctx.createLinearGradient(0,0,0,H);
+      bg.addColorStop(0,'#16161e'); bg.addColorStop(1,'#1e1f2c');
+      ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+      // líneas guía muy sutiles
+      ctx.strokeStyle = 'rgba(255,255,255,.03)'; ctx.lineWidth=1;
+      for(let i=0;i<W;i+=40){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke(); }
+
+      const DEPTH = 5;
+      const visible = stack.slice(-10);
+      visible.forEach((b,i)=>{
+        const screenY = (H-BLOCK_H) - i*BLOCK_H;
+        drawBlock3d(b.x, screenY, b.w, BLOCK_H-4, b.color);
+      });
+
+      // bloque en movimiento
+      if(alive && moving){
+        const screenY = (H-BLOCK_H) - visible.length*BLOCK_H;
+        drawBlock3d(moving.x, screenY, moving.w, BLOCK_H-4, moving.color);
+        // pequeña flecha parpadeante indicando que es el bloque a soltar
+        ctx.fillStyle = 'rgba(255,255,255,.5)';
+        ctx.font = '14px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('▼', moving.x+moving.w/2, screenY-4);
+      }
+    }
+
+    function finish(){
+      alive=false; clearInterval(loop);
+      window.removeEventListener('keydown', keyHandler);
+      cv.onclick=null;
+      recordAttempt(g.id, layer);
+      render();
+    }
+
+    draw();
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 5 — VASOS (shell game, colores pastel, acelera y se intercambia)
+===================================================================== */
+function gameCentro(){
+  const g = GAMES.find(x=>x.id==='centro');
+  const BAR_W = 420, MARKER_W = 5;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Click<br><b id="hudClick">0/5</b></div>
+        <div class="stat">Promedio<br><b id="hudLast">—</b></div>
+      </div>
+      <div class="centro-wrap">
+        <div class="centro-bar" id="centroBar">
+          <div class="centro-target"></div>
+          <div class="centro-needle" id="centroNeedle"></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const needle = document.getElementById('centroNeedle');
+    const bar = document.getElementById('centroBar');
+
+    const travel = BAR_W - MARKER_W; // recorrido real de la aguja (su borde izquierdo)
+    const center = travel / 2;       // posición del centro exacto dentro de ese recorrido
+
+    let clickCount = 0;
+    let percents = [];
+    let startTs = performance.now();
+    // arranca lento y se acelera con cada uno de los 5 clicks (período más corto = más rápido)
+    let periodMs = 2200;
+    let rafId = null;
+    let alive = true;
+    let needleX = center; // única fuente de verdad: se actualiza cada frame y es lo
+                           // que se usa tanto para dibujar como para calcular el click,
+                           // así nunca hay desfase entre lo que ves y lo que se puntúa
+
+    // onda triangular: a diferencia de un seno, la velocidad es constante en todo
+    // el recorrido (no se frena en los bordes ni acelera en el centro)
+    function triangleWave(t){
+      const phase = t - Math.floor(t); // 0..1
+      const y = phase < 0.5 ? phase*2 : 2 - phase*2; // 0..1..0 lineal
+      return y*2 - 1; // -1..1
+    }
+
+    function tick(now){
+      if(!alive) return;
+      const t = (now - startTs) / periodMs;
+      needleX = center + center * triangleWave(t);
+      needle.style.transform = `translateX(${needleX}px)`;
+      rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+
+    function registerClick(){
+      if(!alive) return;
+      // usa exactamente la misma posición que se ve dibujada en este instante
+      const distance = Math.abs(needleX - center);
+      const percent = Math.max(0, 100 - (distance / center) * 100);
+      percents.push(percent);
+      clickCount++;
+      const runningAvg = percents.reduce((a,b)=>a+b,0) / percents.length;
+      document.getElementById('hudClick').textContent = clickCount+'/5';
+      document.getElementById('hudLast').textContent = runningAvg.toFixed(2)+'%';
+
+      // destello en el punto exacto donde se hizo clic, como feedback inmediato
+      const flash = document.createElement('div');
+      flash.className = 'centro-click-flash';
+      flash.style.left = needleX + 'px';
+      bar.appendChild(flash);
+      setTimeout(()=> flash.remove(), 380);
+
+      if(clickCount >= 5){
+        // feedback visual del último clic: barra parpadea y la aguja se congela
+        finish();
+        return;
+      }
+      // cada click siguiente es más rápido que el anterior
+      periodMs = Math.max(420, periodMs * 0.74);
+      startTs = performance.now();
+    }
+
+    bar.onclick = registerClick;
+    window.addEventListener('keydown', spaceHandler);
+    function spaceHandler(e){ if(e.code==='Space'){ e.preventDefault(); registerClick(); } }
+
+    function finish(){
+      alive = false;
+      cancelAnimationFrame(rafId);
+      bar.onclick = null;
+      window.removeEventListener('keydown', spaceHandler);
+      const avg = percents.reduce((a,b)=>a+b,0) / percents.length;
+      const finalScore = Math.round(avg*100)/100;
+
+      // animar la barra parpadeando 3 veces antes de mostrar el resultado
+      let flashes = 0;
+      const flashInterval = setInterval(()=>{
+        bar.style.opacity = flashes%2===0 ? '0.4' : '1';
+        flashes++;
+        if(flashes >= 6){
+          clearInterval(flashInterval);
+          bar.style.opacity = '1';
+          // mover la aguja al centro (posición perfecta) como cierre visual
+          needle.style.transition = 'transform .5s ease';
+          needle.style.transform = `translateX(${(BAR_W-MARKER_W)/2}px)`;
+          setTimeout(()=>{
+            recordAttempt(g.id, finalScore);
+            render();
+          }, 600);
+        }
+      }, 120);
+    }
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 6 — DOODLE JUMP (espaciadora para rebotar en plataformas)
+===================================================================== */
+function gameDoodle(){
+  const g = GAMES.find(x=>x.id==='doodle');
+  const W = 360, H = 520;
+  const PW=52, PH=12, PLAYER_R=15, JUMP_HEIGHT=180;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Altura<br><b id="hudHeight">0</b></div>
+      </div>
+      <canvas id="doodleCanvas" width="${W}" height="${H}"></canvas>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:-6px;">Flechas/A·D para moverte. 🟢 infinitas · 🟠 2 saltos · 🔴 1 salto y se cae</div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+    const cv = document.getElementById('doodleCanvas');
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#242732'; ctx.fillRect(0,0,W,H);
+  }
+
+  // Todo el cálculo físico (jugador y plataformas) vive en un único sistema de
+  // coordenadas de MUNDO, donde "y" más chico = más arriba. La cámara (cameraY)
+  // es solo un desplazamiento que se aplica al final, únicamente al dibujar.
+  // Nunca se mezclan coordenadas de mundo con coordenadas de pantalla.
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const cv = document.getElementById('doodleCanvas');
+    const ctx = cv.getContext('2d');
+
+    function makePlatform(worldY){
+      // mientras más alto el puntaje actual, menos probabilidad de verde y más
+      // de naranja/roja — siempre hay por dónde subir, pero arriesgas más si
+      // dejas que una se rompa sin aprovecharla
+      const difficulty = Math.min(1, maxHeightUnits / 60); // 0 al inicio, 1 a partir de cierta altura
+      const greenChance  = 0.55 - difficulty*0.35; // de 0.55 baja hasta 0.20
+      const orangeChance = 0.30 + difficulty*0.10; // de 0.30 sube hasta 0.40
+      const r = Math.random();
+      let type, uses;
+      if(r < greenChance){ type='green'; uses=Infinity; }
+      else if(r < greenChance+orangeChance){ type='orange'; uses=2; }
+      else { type='red'; uses=1; }
+      return { x: 16+Math.random()*(W-32-PW), y: worldY, w:PW, type, uses, falling:false, vy:0 };
+    }
+
+    let maxHeightUnits = 0;
+    let player = { x: W/2, y: H-50, vy: 0, vx: 0 };
+    let platforms = [];
+    // primer piso: siempre verde e infinita, ancha, para poder calentar sin presión
+    platforms.push({ x: W/2-PW, y: H-24, w: PW*2, type:'green', uses:Infinity, falling:false, vy:0 });
+    let lastSpawnY = H-24;
+    for(let i=1;i<9;i++){
+      lastSpawnY -= 48 + Math.random()*28;
+      platforms.push(makePlatform(lastSpawnY));
+    }
+
+    let cameraY = 0;       // se resta a todo lo que se dibuja; solo decrece (sube)
+    let alive = true;
+    let keys = {};
+
+    function keyDown(e){
+      const k = e.key.toLowerCase();
+      if(k==='arrowleft'||k==='a') keys.left=true;
+      if(k==='arrowright'||k==='d') keys.right=true;
+    }
+    function keyUp(e){
+      const k = e.key.toLowerCase();
+      if(k==='arrowleft'||k==='a') keys.left=false;
+      if(k==='arrowright'||k==='d') keys.right=false;
+    }
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+
+    const loop = setInterval(()=>{
+      if(!alive) return;
+
+      // dificultad: mientras más subes, más gravedad (todo se mueve/cae más rápido)
+      const gravity = 0.44 + Math.min(0.5, maxHeightUnits/280);
+
+      // movimiento horizontal
+      if(keys.left) player.vx = -3.4;
+      else if(keys.right) player.vx = 3.4;
+      else player.vx *= 0.8;
+      player.x += player.vx;
+      if(player.x<PLAYER_R) player.x=PLAYER_R;
+      if(player.x>W-PLAYER_R) player.x=W-PLAYER_R;
+
+      // física vertical (coordenadas de mundo, sin cámara)
+      const prevBottom = player.y + PLAYER_R;
+      player.vy += gravity;
+      player.y += player.vy;
+      const currBottom = player.y + PLAYER_R;
+
+      // aterrizaje: detección continua (evita atravesar) — si en el mismo
+      // frame se cruzan varias plataformas, gana siempre la más alta (menor y)
+      if(player.vy > 0){
+        let landed = null;
+        for(const p of platforms){
+          if(p.falling) continue;
+          const overlapX = (player.x + PLAYER_R) > p.x && (player.x - PLAYER_R) < (p.x + p.w);
+          const crossed = prevBottom <= p.y && currBottom >= p.y;
+          if(overlapX && crossed){
+            if(!landed || p.y < landed.y) landed = p;
+          }
+        }
+        if(landed){
+          player.y = landed.y - PLAYER_R;
+          // el impulso se escala junto con la gravedad para que la altura máxima
+          // del salto sea siempre la misma — así todo se siente más rápido, pero
+          // nunca se vuelve imposible alcanzar la siguiente plataforma
+          player.vy = -Math.sqrt(2*gravity*JUMP_HEIGHT);
+          if(landed.uses !== Infinity){
+            landed.uses--;
+            if(landed.uses <= 0){ landed.falling = true; landed.vy = 1.2; }
+          }
+        }
+      }
+
+      // plataformas ya rotas: siguen cayendo
+      platforms.forEach(p=>{ if(p.falling){ p.vy += 0.25; p.y += p.vy; } });
+
+      // la cámara solo sube (nunca retrocede) para mantener al jugador visible
+      cameraY = Math.min(cameraY, player.y - H*0.45);
+
+      // altura alcanzada, en unidades simples para el puntaje
+      const heightUnits = Math.max(0, Math.round(((H-50) - player.y) / 12));
+      if(heightUnits > maxHeightUnits) maxHeightUnits = heightUnits;
+      document.getElementById('hudHeight').textContent = maxHeightUnits;
+
+      // recicla plataformas fuera de vista (en coordenadas de pantalla) y genera nuevas arriba
+      platforms = platforms.filter(p => (p.y - cameraY) < H+60);
+      while(platforms.length < 9){
+        lastSpawnY -= 48 + Math.random()*28;
+        platforms.push(makePlatform(lastSpawnY));
+      }
+
+      // fin del juego: el jugador cae fuera de la vista (en pantalla)
+      if((player.y - cameraY) > H+30){
+        endGame();
+        return;
+      }
+
+      draw();
+    }, 20);
+
+    function draw(){
+      ctx.fillStyle = '#242732'; ctx.fillRect(0,0,W,H);
+      platforms.forEach(p=>{
+        ctx.fillStyle = p.falling ? '#e8625e' : (p.type==='green' ? '#6fe3c4' : p.type==='orange' ? '#ffb454' : '#e8625e');
+        ctx.fillRect(p.x, p.y-cameraY, p.w, PH);
+      });
+      ctx.fillStyle = '#fff1c2';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y-cameraY, PLAYER_R, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function endGame(){
+      alive = false;
+      clearInterval(loop);
+      window.removeEventListener('keydown', keyDown);
+      window.removeEventListener('keyup', keyUp);
+      recordAttempt(g.id, maxHeightUnits);
+      render();
+    }
+
+    draw();
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 7 — NAVES ESPACIALES (esquivar meteoritos)
+===================================================================== */
+function gameNaves(){
+  const g = GAMES.find(x=>x.id==='naves');
+  const W = 380, H = 520;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Tiempo<br><b id="hudSecs">0s</b></div>
+        <div class="stat">Cohetes<br><b id="hudRockets">0</b></div>
+      </div>
+      <canvas id="navesCanvas" width="${W}" height="${H}"></canvas>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:-6px;">Flechas/A·D para moverse. Espacio para disparar cohete.</div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+        <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'Iniciar'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+    const cv = document.getElementById('navesCanvas');
+    if(cv){ const ctx=cv.getContext('2d'); ctx.fillStyle='#0d0e18'; ctx.fillRect(0,0,W,H); }
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const cv = document.getElementById('navesCanvas');
+    const ctx = cv.getContext('2d');
+
+    const SHIP_W=34, SHIP_H=28;
+    let ship = {x:W/2-SHIP_W/2, y:H-50};
+    let keys = {};
+    let meteors = [];
+    let bullets = [];        // cohetes disparados
+    let rockets = 0;         // cohetes disponibles
+    let rocketTimer = 0;     // contador para dar cohete cada 5s
+    let stillTimer = 0;      // cuántos ms lleva quieto
+    let lastShipX = ship.x;
+    let elapsedMs = 0, alive = true;
+    let spawnTimer = 0;
+    let stars = Array.from({length:60},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.3}));
+
+    function keyDown(e){
+      const k = e.key.toLowerCase();
+      if(k==='arrowleft'||k==='a') keys.left=true;
+      if(k==='arrowright'||k==='d') keys.right=true;
+      if(e.code==='Space'){ e.preventDefault(); fireRocket(); }
+    }
+    function keyUp(e){
+      const k = e.key.toLowerCase();
+      if(k==='arrowleft'||k==='a') keys.left=false;
+      if(k==='arrowright'||k==='d') keys.right=false;
+    }
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+
+    function fireRocket(){
+      if(rockets<=0 || !alive) return;
+      rockets--;
+      document.getElementById('hudRockets').textContent = rockets;
+      bullets.push({x:ship.x+SHIP_W/2, y:ship.y});
+    }
+
+    const loop = setInterval(()=>{
+      if(!alive) return;
+      elapsedMs += 20;
+      const secs = Math.floor(elapsedMs/1000);
+      document.getElementById('hudSecs').textContent = secs+'s';
+
+      // cohete extra cada 5 segundos
+      rocketTimer += 20;
+      if(rocketTimer >= 5000){ rocketTimer=0; rockets++; document.getElementById('hudRockets').textContent=rockets; }
+
+      const speed = 4.4;
+      if(keys.left) ship.x -= speed;
+      if(keys.right) ship.x += speed;
+      ship.x = Math.max(4, Math.min(W-SHIP_W-4, ship.x));
+
+      // si el jugador lleva 3s quieto, spawnear un meteorito dirigido a su posición
+      if(Math.abs(ship.x - lastShipX) < 1){ stillTimer += 20; } else { stillTimer=0; }
+      lastShipX = ship.x;
+      if(stillTimer >= 3000){
+        stillTimer = 0;
+        const targetX = ship.x + SHIP_W/2;
+        meteors.push({x:targetX, y:-18, r:16, targeted:true});
+      }
+
+      // spawn aleatorio
+      const fallSpeed = 2.4 + secs*0.2;
+      const spawnEvery = Math.max(200, 650-secs*18);
+      spawnTimer += 20;
+      if(spawnTimer >= spawnEvery){
+        spawnTimer=0;
+        const r=10+Math.random()*10;
+        meteors.push({x:Math.random()*(W-r*2)+r, y:-r, r, targeted:false});
+      }
+
+      meteors.forEach(m=> m.y += m.targeted ? Math.min(fallSpeed+2, 7) : fallSpeed);
+      meteors = meteors.filter(m=> m.y < H+40);
+
+      // mueve y choca cohetes con meteoritos
+      bullets.forEach(b=> b.y -= 9);
+      bullets = bullets.filter(b=> b.y > -10);
+      bullets.forEach(b=>{
+        for(let i=meteors.length-1;i>=0;i--){
+          const m=meteors[i];
+          const dx=b.x-m.x, dy=b.y-m.y;
+          if(dx*dx+dy*dy < (m.r+5)*(m.r+5)){
+            meteors.splice(i,1); b.y=-999; break;
+          }
+        }
+      });
+
+      // colisión nave con meteorito
+      for(const m of meteors){
+        const cx=Math.max(ship.x,Math.min(m.x,ship.x+SHIP_W));
+        const cy=Math.max(ship.y,Math.min(m.y,ship.y+SHIP_H));
+        const dx=m.x-cx, dy=m.y-cy;
+        if(dx*dx+dy*dy < m.r*m.r){ explodeAndEnd(secs); return; }
+      }
+
+      draw();
+    },20);
+
+    function drawShip(){
+      const sx=ship.x, sy=ship.y, sw=SHIP_W, sh=SHIP_H;
+      // cuerpo principal con gradiente toy
+      const gr=ctx.createLinearGradient(sx,sy,sx,sy+sh);
+      gr.addColorStop(0,'#FECA57'); gr.addColorStop(1,'#FF9F43');
+      ctx.fillStyle=gr;
+      ctx.beginPath();
+      ctx.moveTo(sx+sw/2,sy); ctx.lineTo(sx,sy+sh); ctx.lineTo(sx+sw,sy+sh); ctx.closePath(); ctx.fill();
+      // highlight lateral
+      ctx.fillStyle='rgba(255,255,255,.3)';
+      ctx.beginPath();
+      ctx.moveTo(sx+sw/2,sy+3); ctx.lineTo(sx+sw*.3,sy+sh*.7); ctx.lineTo(sx+sw*.5,sy+sh*.7); ctx.closePath(); ctx.fill();
+      // cabina
+      const cabGr=ctx.createRadialGradient(sx+sw/2,sy+sh*.45,1,sx+sw/2,sy+sh*.45,sw*.2);
+      cabGr.addColorStop(0,'#48DBFB'); cabGr.addColorStop(1,'#0984E3');
+      ctx.fillStyle=cabGr;
+      ctx.beginPath(); ctx.ellipse(sx+sw/2,sy+sh*.45,sw*.2,sh*.18,0,0,Math.PI*2); ctx.fill();
+      // llama del motor
+      ctx.fillStyle=`rgba(255,107,107,${.6+Math.random()*.4})`;
+      ctx.beginPath();
+      ctx.moveTo(sx+sw*.3,sy+sh); ctx.lineTo(sx+sw*.7,sy+sh);
+      ctx.lineTo(sx+sw/2,sy+sh+8+Math.random()*6); ctx.closePath(); ctx.fill();
+    }
+
+    function drawMeteor(m){
+      const gr=ctx.createRadialGradient(m.x-m.r*.3,m.y-m.r*.3,1,m.x,m.y,m.r);
+      gr.addColorStop(0,'#B2BEC3'); gr.addColorStop(.6,'#636e72'); gr.addColorStop(1,'#2d3436');
+      ctx.fillStyle=m.targeted?'#FF6B6B':gr;
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill();
+      if(m.targeted){
+        // indicador de targeting
+        ctx.strokeStyle='rgba(255,107,107,.6)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(m.x,m.y,m.r+4,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.fillStyle='rgba(255,255,255,.18)';
+      ctx.beginPath(); ctx.arc(m.x-m.r*.3,m.y-m.r*.3,m.r*.35,0,Math.PI*2); ctx.fill();
+    }
+
+    function draw(){
+      // fondo espacial
+      ctx.fillStyle='#0d0e18'; ctx.fillRect(0,0,W,H);
+      stars.forEach(s=>{
+        ctx.fillStyle=`rgba(255,255,255,${.3+Math.random()*.2})`;
+        ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+      });
+      meteors.forEach(drawMeteor);
+      // cohetes
+      bullets.forEach(b=>{
+        if(b.y<-9) return;
+        const gr=ctx.createLinearGradient(b.x,b.y,b.x,b.y+16);
+        gr.addColorStop(0,'#FECA57'); gr.addColorStop(1,'rgba(254,202,87,0)');
+        ctx.fillStyle=gr; ctx.fillRect(b.x-2,b.y,4,16);
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fill();
+      });
+      drawShip();
+    }
+
+    function explodeAndEnd(secs){
+      alive=false; clearInterval(loop);
+      window.removeEventListener('keydown',keyDown);
+      window.removeEventListener('keyup',keyUp);
+      const cx=ship.x+SHIP_W/2, cy=ship.y+SHIP_H/2;
+      let frame=0;
+      const exLoop=setInterval(()=>{
+        frame++;
+        ctx.fillStyle='#0d0e18'; ctx.fillRect(0,0,W,H);
+        stars.forEach(s=>{ctx.fillStyle='rgba(255,255,255,.3)';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();});
+        meteors.forEach(drawMeteor);
+        // onda de explosión
+        [[`rgba(255,107,107,${1-frame/10})`,frame*5],[`rgba(254,202,87,${.8-frame/12})`,frame*3],[`rgba(255,255,255,${.5-frame/12})`,frame*1.5]].forEach(([c,r])=>{
+          ctx.fillStyle=c; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+        });
+        if(frame>=9){ clearInterval(exLoop); recordAttempt(g.id,secs); render(); }
+      },40);
+    }
+
+    draw();
+  }
+
+  render();
+}
+
+/* =====================================================================
+   JUEGO 8 — ZIGZAG (la bola dobla con cada clic siguiendo la pista)
+===================================================================== */
+function gameZigzag(){
+  const g = GAMES.find(x=>x.id==='zigzag');
+  const W = 380, H = 480;
+  const TRACK_HALF_WIDTH = 40; // qué tan ancha es la pista a cada lado del centro
+  const BALL_R = 11;
+  const BALL_SCREEN_Y = H*0.72; // la bola siempre se dibuja fija aquí; la pista se mueve
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Sobreviviste<br><b id="hudSecs">0s</b></div>
+      </div>
+      <canvas id="zigzagCanvas" width="${W}" height="${H}"></canvas>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:-6px;">Clic o espacio para doblar — síguela justo cuando la pista cambia de dirección</div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+      <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'▶ Iniciar (Enter)'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last = state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML = renderResultBox(g.id, last.score);
+    }
+    const cv = document.getElementById('zigzagCanvas');
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#1a1c24'; ctx.fillRect(0,0,W,H);
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled = true;
+    const cv = document.getElementById('zigzagCanvas');
+    const ctx = cv.getContext('2d');
+
+    // la pista se construye como una secuencia de segmentos diagonales de 45°.
+    // no es perfectamente regular: la longitud de cada tramo varía al azar (a
+    // veces sale una recta larga, a veces varios zigzags cortos seguidos), y de
+    // vez en cuando el siguiente tramo sigue en la misma dirección en vez de
+    // doblar siempre, para que no se sienta mecánico.
+    let segments = [];
+    let curX = 0, curY = 0, curDir = 1;
+    function baseLenForSecs(secs){ return Math.max(60, 210 - secs*5); }
+    function addSegment(len, dirOverride){
+      const dir = dirOverride!=null ? dirOverride : curDir;
+      const nx = curX + dir*len;
+      const ny = curY - len;
+      segments.push({x0:curX, y0:curY, x1:nx, y1:ny, dir});
+      curX = nx; curY = ny; curDir = dir;
+    }
+    function addNextSegment(secs){
+      const base = baseLenForSecs(secs);
+      const lenFactor = 0.55 + Math.random()*1.35; // variación de longitud
+      const len = base * lenFactor;
+      const keepGoingStraight = Math.random() < 0.22; // ~22% de las veces no dobla
+      addSegment(len, keepGoingStraight ? curDir : -curDir);
+    }
+    function ensureTrackAhead(targetY){
+      while(curY > targetY) addNextSegment(elapsedSecs());
+    }
+    function trackCenterX(y){
+      for(const s of segments){
+        if(y <= s.y0+0.001 && y >= s.y1-0.001){
+          return s.x0 + s.dir*(s.y0 - y);
+        }
+      }
+      // si por algún motivo se pidió un punto más allá de lo generado, se extrapola
+      const last = segments[segments.length-1];
+      return last.x1 + last.dir*(last.y1 - y);
+    }
+
+    let ball = { x:0, y:0, dir:1 };
+    let elapsedMs = 0, alive = true;
+    function elapsedSecs(){ return elapsedMs/1000; }
+
+    addSegment(baseLenForSecs(0), 1);
+    ensureTrackAhead(-700);
+
+    function onToggle(){ if(alive) ball.dir *= -1; }
+    function keyHandler(e){ if(e.code==='Space'){ e.preventDefault(); onToggle(); } }
+    cv.onclick = onToggle;
+    window.addEventListener('keydown', keyHandler);
+
+    const loop = setInterval(()=>{
+      if(!alive) return;
+      elapsedMs += 20;
+      const secs = Math.floor(elapsedMs/1000);
+      document.getElementById('hudSecs').textContent = secs+'s';
+
+      // dificultad: más velocidad hacia adelante con el tiempo (la pista en sí ya
+      // zigzaguea más seguido porque turnLenForSecs() se acorta con el tiempo)
+      const forwardSpeed = Math.min(7.2, 2.4 + secs*0.14);
+
+      ball.y -= forwardSpeed;
+      ball.x += ball.dir*forwardSpeed;
+      ensureTrackAhead(ball.y - 700);
+
+      const centerX = trackCenterX(ball.y);
+      const horizontalDeviation = Math.abs(ball.x - centerX);
+      // la pista está en diagonal (45°), así que la distancia horizontal NO es
+      // la distancia real hasta el borde — hay que proyectarla perpendicular a
+      // la pista (dividir entre √2) para que el choque coincida con lo que se
+      // ve dibujado en pantalla
+      const perpDeviation = horizontalDeviation / Math.SQRT2;
+      // solo muere cuando al menos ~4px de la bola ya están sobre el abismo,
+      // no apenas su borde toca el filo de la pista
+      const crashThresholdPerp = TRACK_HALF_WIDTH - BALL_R + 4;
+      if(perpDeviation > crashThresholdPerp){
+        endGame(secs);
+        return;
+      }
+
+      draw();
+    }, 20);
+
+    function screenX(worldX){ return W/2 + (worldX - ball.x); }
+    function screenY(worldY){ return BALL_SCREEN_Y + (worldY - ball.y); }
+
+    const SQRT2 = Math.SQRT2;
+
+    function draw(){
+      // el fondo es un "abismo": oscuro y con un leve degradado, para que la
+      // pista se sienta como una plataforma elevada con caída a los lados,
+      // no como un pasillo entre paredes
+      const grad = ctx.createRadialGradient(W/2,H*0.4,40, W/2,H*0.4,H*0.9);
+      grad.addColorStop(0, '#11131a');
+      grad.addColorStop(1, '#05060a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,W,H);
+
+      const visibleSegments = segments.filter(s => !(s.y0 < ball.y-520 || s.y1 > ball.y+200));
+
+      // la pista queda completamente lisa: un solo color de relleno, sin bisel
+      // ni líneas internas que puedan generar costuras en los dobleces. La
+      // sensación de altura se da con una sombra difusa proyectada hacia abajo.
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.55)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = '#ff9a4d';
+      visibleSegments.forEach(s=>{
+        ctx.beginPath();
+        ctx.arc(screenX(s.x1), screenY(s.y1), TRACK_HALF_WIDTH, 0, Math.PI*2);
+        ctx.fill();
+      });
+      visibleSegments.forEach(s=>{
+        const px = 1/SQRT2, py = s.dir/SQRT2;
+        const hw = TRACK_HALF_WIDTH;
+        const ax = screenX(s.x0 + px*hw), ay = screenY(s.y0 + py*hw);
+        const bx = screenX(s.x1 + px*hw), by = screenY(s.y1 + py*hw);
+        const cx = screenX(s.x1 - px*hw), cy = screenY(s.y1 - py*hw);
+        const dx = screenX(s.x0 - px*hw), dy = screenY(s.y0 - py*hw);
+        ctx.beginPath();
+        ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(cx,cy); ctx.lineTo(dx,dy);
+        ctx.closePath(); ctx.fill();
+      });
+      ctx.restore();
+
+      // sombra de la bola sobre la pista, para reforzar la sensación de altura
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      ctx.beginPath();
+      ctx.ellipse(W/2, BALL_SCREEN_Y+BALL_R*0.6, BALL_R*0.9, BALL_R*0.4, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.fillStyle = '#6fe3c4';
+      ctx.beginPath();
+      ctx.arc(W/2, BALL_SCREEN_Y, BALL_R, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function endGame(secs){
+      alive = false;
+      clearInterval(loop);
+      cv.onclick = null;
+      window.removeEventListener('keydown', keyHandler);
+      recordAttempt(g.id, secs);
+      render();
+    }
+
+    draw();
+  }
+
+  render();
+}
+
+/* =====================================================================
+   MODO JUGADOR REAL — pantalla de estado y arranque
+===================================================================== */
+function renderRealStatus(){
+  const gameId = state.todayGameId;
+  const g = GAMES.find(x=>x.id===gameId);
+
+  if(!g){
+    screen.innerHTML = `<div class="lobby-hero"><h2>Esperando al administrador</h2><p class="muted">Todavía no se ha definido el reto de hoy. Intenta de nuevo en un momento.</p></div>`;
+    return;
+  }
+
+  const left = attemptsLeft(gameId);
+  const best = bestScore(gameId);
+
+  screen.innerHTML = `
+    <div class="lobby-hero">
+      <div class="eyebrow">Reto de hoy</div>
+      <h2>${g.icon} ${g.name}</h2>
+      <p>${g.desc}</p>
+      ${left>0
+        ? `<p>Tienes ${attemptsLabel(gameId)} intento(s) disponible(s).</p><button class="spin-btn" id="playTodayBtn">Jugar</button>`
+        : `<p>Ya usaste tus 2 intentos de hoy.</p><div class="result-box" style="display:inline-block;text-align:left;"><div class="score">Tu mejor puntaje: ${best!=null ? best+(g.lowerIsBetter?' ms':'') : '—'}</div></div>`
+      }
+    </div>
+    <div class="live-leaderboard">
+      <h3>🏆 Mejores puntajes de hoy (en vivo)</h3>
+      <div id="liveLeaderboardBody"></div>
+    </div>
+  `;
+  renderLiveLeaderboard(gameId);
+  if(left>0) document.getElementById('playTodayBtn').addEventListener('click', ()=> openGame(gameId));
+}
+
+function renderLiveLeaderboard(gameId){
+  const body = document.getElementById('liveLeaderboardBody');
+  if(!body) return;
+  const g = GAMES.find(x=>x.id===gameId);
+  const entries = Object.entries(state.serverResults)
+    .filter(([, arr])=> arr.length>0)
+    .map(([name, arr])=>({
+      name,
+      best: g.lowerIsBetter ? Math.min(...arr.map(a=>a.score)) : Math.max(...arr.map(a=>a.score)),
+      attempts: arr.length,
+    }))
+    .sort((a,b)=> g.lowerIsBetter ? a.best-b.best : b.best-a.best);
+
+  if(!entries.length){
+    body.innerHTML = `<div class="empty">Todavía nadie ha intentado el reto de hoy.</div>`;
+    return;
+  }
+  body.innerHTML = `
+    <table>
+      <thead><tr><th>#</th><th>Jugador</th><th>Mejor puntaje</th><th>Intentos</th></tr></thead>
+      <tbody>
+        ${entries.map((e,i)=>`
+          <tr class="${e.name===REAL_NAME ? 'me-row':''}">
+            <td>${i+1}</td>
+            <td>${e.name===REAL_NAME ? 'Tú' : e.name}</td>
+            <td>${e.best}${g.lowerIsBetter?' ms':''}</td>
+            <td>${e.attempts}/2</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+if(REAL_MODE){
+  screen.innerHTML = `<p class="muted" style="text-align:center;padding:60px 20px;">Conectando con el servidor…</p>`;
+  socket = io();
+  socket.on('state', (s)=>{
+    state.serverResults = (s.today && s.today.results) || {};
+    state.todayGameId = (s.today && s.today.gameId) || null;
+    state.serverStarted = !!s.started;
+
+    if(!realModeBooted){
+      realModeBooted = true;
+      if(!state.serverStarted){
+        screen.innerHTML = `<div class="lobby-hero"><h2>Todavía no inicia</h2><p class="muted">Vuelve a la página principal y espera a que el administrador arranque el juego.</p></div>`;
+        return;
+      }
+      renderRealStatus();
+    }
+    // si ya estamos jugando una partida en curso, no interrumpimos con un
+    // re-render; la próxima vez que el jugador vuelva a la pantalla de estado
+    // (al terminar su intento) ya se usan los datos más recientes del cierre.
+  });
+} else {
+  /* =====================================================================
+     INICIO (modo demo/admin — sin parámetros de jugador en la URL)
+  ===================================================================== */
+  renderLobby();
+}
+</script>
+</body>
+</html>

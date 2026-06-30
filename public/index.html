@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rifa de Minijuegos — ¿Quién eres?</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span><h1>Rifa de Minijuegos</h1></div>
+    </div>
+
+    <div id="screenJoin" class="card">
+      <div class="eyebrow">Antes de empezar</div>
+      <h2>¿Cuál de estos usuarios eres?</h2>
+      <p class="muted">Selecciona tu nombre. Una vez elegido, nadie más puede tomarlo.</p>
+      <div id="userGrid" class="user-grid"></div>
+      <div id="joinMsg" class="msg"></div>
+    </div>
+
+    <div id="screenWaiting" class="card hidden">
+      <div class="eyebrow">Listo</div>
+      <h2>Eres <span id="meName" class="accent"></span></h2>
+      <p class="muted">Esperando que el administrador arranque el juego…</p>
+      <div class="spinner"></div>
+      <p class="muted" style="font-size:12px;">Si te equivocaste de usuario, pide al administrador que te libere.</p>
+    </div>
+
+    <div id="screenStarted" class="card hidden">
+      <div class="eyebrow">¡Arrancó!</div>
+      <h2 id="startedTitle">🎮 El juego ya comenzó</h2>
+      <p class="muted">Jugando como <b id="meName2" class="accent"></b></p>
+      <div id="attemptsInfo" class="msg" style="color:var(--text);"></div>
+      <a id="playLink" class="spin-btn" href="#" target="_blank">Ir a jugar</a>
+      <div class="live-leaderboard" id="liveLeaderboard">
+        <h3>🏆 Mejores puntajes de hoy (en vivo)</h3>
+        <div id="leaderboardBody"></div>
+      </div>
+    </div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
