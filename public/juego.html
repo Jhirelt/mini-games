@@ -8,16 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:        #13141a;
-    --surface:   #1c1e26;
-    --surface-2: #242732;
-    --border:    #32353f;
+    --bg:        #0f1117;
+    --surface:   #181a24;
+    --surface-2: #1f2130;
+    --border:    #2e3148;
     --text:      #eceef2;
     --muted:     #8b8e98;
-    --accent:    #6fe3c4;   /* encendido / éxito */
-    --accent-dim:#2b4a42;
-    --danger:    #e8625e;
-    --danger-dim:#4a2b2b;
+    --accent:    #FECA57;   /* toy amarillo — encendido/éxito */
+    --accent-dim:#3a3010;
+    --danger:    #FF6B6B;
+    --danger-dim:#3a1515;
+    --toy-blue:  #48DBFB;
+    --toy-green: #1DD1A1;
+    --toy-pink:  #FF6EB4;
+    --toy-purple:#A29BFE;
+    --toy-orange:#FF9F43;
     --p-pink:    #ffd2e6;
     --p-blue:    #cfe6ff;
     --p-yellow:  #fff1c2;
@@ -35,7 +40,7 @@
   /* ---------- TOP BAR ---------- */
   .topbar{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:28px;}
   .topbar .brand{display:flex;align-items:center;gap:10px;}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
   .brand h1{font-size:18px;letter-spacing:.2px;}
   .topbar .date{color:var(--muted);font-size:13px;}
 
@@ -45,11 +50,11 @@
 
   /* ---------- LOBBY ---------- */
   .lobby-hero{text-align:center;padding:40px 10px 30px;}
-  .lobby-hero .eyebrow{color:var(--accent);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+  .lobby-hero .eyebrow{color:var(--toy-blue);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
   .lobby-hero h2{font-size:34px;margin-top:10px;line-height:1.15;}
   .lobby-hero p{color:var(--muted);margin-top:10px;font-size:14px;max-width:480px;margin-inline:auto;}
 
-  .spin-btn{margin-top:26px;background:var(--accent);color:#0c1410;font-weight:700;font-size:15px;padding:14px 30px;border-radius:30px;letter-spacing:.3px;transition:transform .15s ease;}
+  .spin-btn{margin-top:26px;background:var(--accent);color:#1a1200;font-weight:700;font-size:15px;padding:14px 30px;border-radius:30px;letter-spacing:.3px;transition:transform .15s ease;box-shadow:0 4px 20px rgba(254,202,87,.3);}
   .spin-btn:hover{transform:translateY(-2px);}
   .spin-btn:disabled{opacity:.4;cursor:default;transform:none;}
 
@@ -64,8 +69,8 @@
 
   /* ---------- GAME GRID (lobby list) ---------- */
   .game-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:30px;}
-  .game-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;opacity:.45;}
-  .game-card.today{opacity:1;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .game-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;opacity:.4;}
+  .game-card.today{opacity:1;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset, 0 4px 18px rgba(254,202,87,.15);}
   .game-card .gi{font-size:26px;}
   .game-card h3{font-size:14px;margin-top:8px;}
   .game-card .st{font-size:11px;color:var(--muted);margin-top:4px;}
@@ -80,15 +85,16 @@
   .back-btn:hover{color:var(--text);border-color:var(--text);}
 
   .hud{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px;font-size:13px;color:var(--muted);}
-  .hud .stat b{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;display:block;}
-  .hud .stat{background:var(--surface-2);border-radius:8px;padding:8px 14px;min-width:90px;}
+  .hud .stat b{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:15px;display:block;}
+  .hud .stat{background:var(--surface-2);border-radius:8px;padding:8px 14px;min-width:90px;border:1px solid var(--border);}
 
-  .primary-btn{background:var(--accent);color:#0c1410;font-weight:700;font-size:14px;padding:10px 20px;border-radius:8px;}
+  .primary-btn{background:var(--accent);color:#1a1200;font-weight:700;font-size:14px;padding:10px 20px;border-radius:8px;box-shadow:0 2px 12px rgba(254,202,87,.25);transition:transform .1s;}
   .primary-btn:disabled{opacity:.35;cursor:default;}
+  .primary-btn:not(:disabled):hover{transform:translateY(-1px);}
   .ghost-btn{background:var(--surface-2);color:var(--text);font-size:13px;padding:9px 18px;border-radius:8px;border:1px solid var(--border);}
 
   .result-box{margin-top:18px;background:var(--surface-2);border:1px dashed var(--border);border-radius:10px;padding:16px;font-size:14px;}
-  .result-box .score{font-family:'JetBrains Mono',monospace;font-size:24px;color:var(--accent);}
+  .result-box .score{font-family:'JetBrains Mono',monospace;font-size:26px;color:var(--accent);}
   .leader-line{margin-top:8px;color:var(--muted);font-size:13px;}
   .leader-table{width:100%;margin-top:10px;border-collapse:collapse;font-size:13px;}
   .leader-table td,.leader-table th{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
@@ -751,8 +757,8 @@ function gameSerpiente(){
   function drawIdle(){
     const cv=document.getElementById('snakeCanvas'); if(!cv) return;
     const ctx=cv.getContext('2d');
-    ctx.fillStyle='#16171f'; ctx.fillRect(0,0,CW,CH);
-    ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=.5;
+    ctx.fillStyle='#0f1117'; ctx.fillRect(0,0,CW,CH);
+    ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=.5;
     for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,CH);ctx.stroke();}
     for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*CELL);ctx.lineTo(CW,j*CELL);ctx.stroke();}
   }
@@ -769,6 +775,8 @@ function gameSerpiente(){
 
     function spd(){ return Math.max(50,150-score*5); }
 
+    // distancia de Chebyshev (max de diferencias absolutas), útil para "zona de exclusión" cuadrada
+    function distHead(c){ return Math.max(Math.abs(c.x-snake[0].x), Math.abs(c.y-snake[0].y)); }
     function freeCell(c,also){
       return !snake.some(s=>s.x===c.x&&s.y===c.y)&&!(also&&also.some(a=>a.x===c.x&&a.y===c.y));
     }
@@ -783,9 +791,15 @@ function gameSerpiente(){
     let poisons=[];
     function refreshP(){
       poisons=[];
-      const n=4+Math.floor(score/3);
-      for(let i=0;i<n;i++){
-        const c=rndPos(poisons.concat([food]));
+      // menos X: solo 2 al inicio, máximo 6 al puntaje 20
+      const n=Math.min(6, 2+Math.floor(score/4));
+      let attempts=0;
+      while(poisons.length<n && attempts<600){
+        attempts++;
+        const c={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};
+        // nunca dentro de las 3 celdas de la cabeza, ni encima de la comida/cuerpo/otras X
+        if(distHead(c)<3) continue;
+        if(!freeCell(c,poisons.concat([food]))) continue;
         poisons.push(c);
       }
     }
@@ -850,10 +864,11 @@ function gameSerpiente(){
     }
 
     function draw(){
-      ctx.fillStyle=flash>0?'#192518':'#16171f';
+      ctx.fillStyle=flash>0?'#1e3020':'#0f1117';
       ctx.fillRect(0,0,CW,CH);
       if(flash>0) flash--;
-      ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.5;
+      // grilla más visible sobre fondo más oscuro
+      ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=.5;
       for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,CH);ctx.stroke();}
       for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*CELL);ctx.lineTo(CW,j*CELL);ctx.stroke();}
       drawApple(food.x,food.y);
@@ -1735,52 +1750,125 @@ function gameZigzag(){
     const SQRT2 = Math.SQRT2;
 
     function draw(){
-      // el fondo es un "abismo": oscuro y con un leve degradado, para que la
-      // pista se sienta como una plataforma elevada con caída a los lados,
-      // no como un pasillo entre paredes
-      const grad = ctx.createRadialGradient(W/2,H*0.4,40, W/2,H*0.4,H*0.9);
-      grad.addColorStop(0, '#11131a');
-      grad.addColorStop(1, '#05060a');
+      // abismo: degradado radial muy oscuro al centro + casi negro en bordes
+      const grad = ctx.createRadialGradient(W/2,H*0.5,20, W/2,H*0.5,H);
+      grad.addColorStop(0, '#1a0a2e');   // centro: morado profundo
+      grad.addColorStop(0.5, '#0d0818');
+      grad.addColorStop(1, '#040208');   // borde: negro absoluto
       ctx.fillStyle = grad;
       ctx.fillRect(0,0,W,H);
 
-      const visibleSegments = segments.filter(s => !(s.y0 < ball.y-520 || s.y1 > ball.y+200));
+      // puntos de luz en el abismo, simulando profundidad
+      for(let i=0;i<8;i++){
+        const gx=W*(.1+i*.12), gy=H*(.2+Math.sin(i*1.3)*.4);
+        const gr2=ctx.createRadialGradient(gx,gy,0,gx,gy,25);
+        gr2.addColorStop(0,'rgba(100,60,180,.12)');
+        gr2.addColorStop(1,'rgba(100,60,180,0)');
+        ctx.fillStyle=gr2; ctx.fillRect(0,0,W,H);
+      }
 
-      // la pista queda completamente lisa: un solo color de relleno, sin bisel
-      // ni líneas internas que puedan generar costuras en los dobleces. La
-      // sensación de altura se da con una sombra difusa proyectada hacia abajo.
-      ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,.55)';
-      ctx.shadowBlur = 14;
-      ctx.shadowOffsetY = 10;
-      ctx.fillStyle = '#ff9a4d';
+      const visibleSegments = segments.filter(s => !(s.y0 < ball.y-520 || s.y1 > ball.y+200));
+      const SQRT2 = Math.SQRT2;
+
+      // PASO 1: cara lateral del borde — sombra 3D que cae hacia el abismo
+      // Se dibuja como una franja oscura/translúcida desplazada hacia abajo y afuera,
+      // creando la ilusión de que la pista tiene grosor antes del vacío
+      const DEPTH = 8; // grosor visual de la caída
+      visibleSegments.forEach(s=>{
+        const px=1/SQRT2, py=s.dir/SQRT2;
+        const hw=TRACK_HALF_WIDTH;
+        // borde izquierdo: cara lateral cayendo al abismo
+        const lax=screenX(s.x0-px*hw), lay=screenY(s.y0-py*hw);
+        const lbx=screenX(s.x1-px*hw), lby=screenY(s.y1-py*hw);
+        ctx.fillStyle='rgba(30,0,60,.9)';
+        ctx.beginPath();
+        ctx.moveTo(lax,lay); ctx.lineTo(lbx,lby);
+        ctx.lineTo(lbx+DEPTH,lby+DEPTH); ctx.lineTo(lax+DEPTH,lay+DEPTH);
+        ctx.closePath(); ctx.fill();
+        // borde derecho
+        const rax=screenX(s.x0+px*hw), ray=screenY(s.y0+py*hw);
+        const rbx=screenX(s.x1+px*hw), rby=screenY(s.y1+py*hw);
+        ctx.beginPath();
+        ctx.moveTo(rax,ray); ctx.lineTo(rbx,rby);
+        ctx.lineTo(rbx+DEPTH,rby+DEPTH); ctx.lineTo(rax+DEPTH,ray+DEPTH);
+        ctx.closePath(); ctx.fill();
+      });
+
+      // PASO 2: parches en los dobleces para tapar huecos
+      ctx.fillStyle='#FF9F43';
       visibleSegments.forEach(s=>{
         ctx.beginPath();
         ctx.arc(screenX(s.x1), screenY(s.y1), TRACK_HALF_WIDTH, 0, Math.PI*2);
         ctx.fill();
       });
+      // parches de borde en dobleces
+      ctx.fillStyle='rgba(30,0,60,.9)';
       visibleSegments.forEach(s=>{
-        const px = 1/SQRT2, py = s.dir/SQRT2;
-        const hw = TRACK_HALF_WIDTH;
-        const ax = screenX(s.x0 + px*hw), ay = screenY(s.y0 + py*hw);
-        const bx = screenX(s.x1 + px*hw), by = screenY(s.y1 + py*hw);
-        const cx = screenX(s.x1 - px*hw), cy = screenY(s.y1 - py*hw);
-        const dx = screenX(s.x0 - px*hw), dy = screenY(s.y0 - py*hw);
+        ctx.beginPath();
+        ctx.arc(screenX(s.x1)+DEPTH/2, screenY(s.y1)+DEPTH/2, TRACK_HALF_WIDTH+2, 0, Math.PI*2);
+        ctx.fill();
+      });
+      ctx.fillStyle='#FF9F43';
+      visibleSegments.forEach(s=>{
+        ctx.beginPath();
+        ctx.arc(screenX(s.x1), screenY(s.y1), TRACK_HALF_WIDTH, 0, Math.PI*2);
+        ctx.fill();
+      });
+
+      // PASO 3: superficie de la pista con degradado toy naranja/amarillo
+      visibleSegments.forEach(s=>{
+        const px=1/SQRT2, py=s.dir/SQRT2;
+        const hw=TRACK_HALF_WIDTH;
+        const ax=screenX(s.x0+px*hw), ay=screenY(s.y0+py*hw);
+        const bx=screenX(s.x1+px*hw), by=screenY(s.y1+py*hw);
+        const cx=screenX(s.x1-px*hw), cy=screenY(s.y1-py*hw);
+        const dx=screenX(s.x0-px*hw), dy=screenY(s.y0-py*hw);
+        // degradado a lo largo del segmento
+        const sg=ctx.createLinearGradient(ax,ay,dx,dy);
+        sg.addColorStop(0,'#FECA57');   // borde izq: amarillo
+        sg.addColorStop(0.5,'#FF9F43'); // centro: naranja
+        sg.addColorStop(1,'#FECA57');   // borde der: amarillo
+        ctx.fillStyle=sg;
         ctx.beginPath();
         ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(cx,cy); ctx.lineTo(dx,dy);
         ctx.closePath(); ctx.fill();
       });
-      ctx.restore();
 
-      // sombra de la bola sobre la pista, para reforzar la sensación de altura
-      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      // PASO 4: bisel brillante en el filo superior de cada borde (línea de luz)
+      ctx.lineWidth=2.5; ctx.lineCap='round';
+      visibleSegments.forEach(s=>{
+        const px=1/SQRT2, py=s.dir/SQRT2;
+        const hw=TRACK_HALF_WIDTH;
+        // línea de luz en borde izquierdo
+        ctx.strokeStyle='rgba(255,220,100,.55)';
+        ctx.beginPath();
+        ctx.moveTo(screenX(s.x0-px*hw),screenY(s.y0-py*hw));
+        ctx.lineTo(screenX(s.x1-px*hw),screenY(s.y1-py*hw));
+        ctx.stroke();
+        // línea de luz en borde derecho
+        ctx.beginPath();
+        ctx.moveTo(screenX(s.x0+px*hw),screenY(s.y0+py*hw));
+        ctx.lineTo(screenX(s.x1+px*hw),screenY(s.y1+py*hw));
+        ctx.stroke();
+      });
+
+      // bola toy con gradiente radial 3D
+      ctx.fillStyle='rgba(0,0,0,.3)';
       ctx.beginPath();
-      ctx.ellipse(W/2, BALL_SCREEN_Y+BALL_R*0.6, BALL_R*0.9, BALL_R*0.4, 0, 0, Math.PI*2);
+      ctx.ellipse(W/2, BALL_SCREEN_Y+BALL_R*.65, BALL_R*.85, BALL_R*.35, 0, 0, Math.PI*2);
       ctx.fill();
-
-      ctx.fillStyle = '#6fe3c4';
+      const ballGr=ctx.createRadialGradient(W/2-BALL_R*.3,BALL_SCREEN_Y-BALL_R*.3,1,W/2,BALL_SCREEN_Y,BALL_R);
+      ballGr.addColorStop(0,'#A29BFE');
+      ballGr.addColorStop(0.6,'#6C5CE7');
+      ballGr.addColorStop(1,'#3d2c9e');
+      ctx.fillStyle=ballGr;
       ctx.beginPath();
       ctx.arc(W/2, BALL_SCREEN_Y, BALL_R, 0, Math.PI*2);
+      ctx.fill();
+      // highlight
+      ctx.fillStyle='rgba(255,255,255,.45)';
+      ctx.beginPath();
+      ctx.arc(W/2-BALL_R*.3, BALL_SCREEN_Y-BALL_R*.3, BALL_R*.28, 0, Math.PI*2);
       ctx.fill();
     }
 
@@ -1789,8 +1877,14 @@ function gameZigzag(){
       clearInterval(loop);
       cv.onclick = null;
       window.removeEventListener('keydown', keyHandler);
-      recordAttempt(g.id, secs);
-      render();
+      // flash de fin antes de mostrar resultado
+      let f=0;
+      const fl=setInterval(()=>{
+        f++;
+        ctx.fillStyle=`rgba(108,92,231,${.35-f*.07})`;
+        ctx.fillRect(0,0,W,H);
+        if(f>=5){ clearInterval(fl); recordAttempt(g.id,secs); render(); }
+      },55);
     }
 
     draw();
