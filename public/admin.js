@@ -8,6 +8,7 @@ const GAMES=[
   {id:'naves',     name:'Naves',        lowerIsBetter:false, unit:'s'},
   {id:'zigzag',    name:'Zigzag',       lowerIsBetter:false, unit:'s'},
   {id:'simon',     name:'Secuencia',    lowerIsBetter:false, unit:''},
+  {id:'caida',     name:'Caída',        lowerIsBetter:false, unit:'s'},
 ];
 
 let adminKey = sessionStorage.getItem('rifa_admin_key')||'';

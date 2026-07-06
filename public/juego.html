@@ -103,24 +103,53 @@
 
   /* ---------- GAME 1: REFLEJOS ---------- */
   .circ-grid{display:grid;grid-template-columns:repeat(3,90px);gap:18px;justify-content:center;margin:26px 0;}
-  .circ{width:90px;height:90px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border);transition:background .08s, transform .08s, box-shadow .15s;}
-  .circ.lit{background:var(--accent);box-shadow:0 0 22px var(--accent);transform:scale(1.08);}
+  .circ{
+    width:90px;height:90px;border-radius:50%;cursor:pointer;
+    background:radial-gradient(circle at 32% 30%, #3a3f55, #23273a 60%, #191c2c);
+    border:2px solid #333a55;
+    box-shadow: inset 0 -8px 12px rgba(0,0,0,.4), inset 0 6px 10px rgba(255,255,255,.06), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .08s, box-shadow .15s;
+  }
+  .circ.lit{
+    background:radial-gradient(circle at 32% 30%, #FFF3C4, #FECA57 55%, #E8A93D);
+    border-color:#FFDD8A;
+    box-shadow: inset 0 -8px 12px rgba(160,100,0,.35), inset 0 6px 10px rgba(255,255,255,.5), 0 0 34px rgba(254,202,87,.75), 0 6px 14px rgba(0,0,0,.4);
+    transform:scale(1.08);
+  }
   .circ.hit{animation:circHit .35s ease-out;}
   @keyframes circHit{
-    0%{transform:scale(1.25);background:#fff;box-shadow:0 0 30px #fff;}
+    0%{transform:scale(1.25);box-shadow:0 0 44px #fff;}
     100%{transform:scale(1);}
   }
   .reflex-feed{text-align:center;color:var(--muted);font-size:13px;min-height:18px;margin-bottom:4px;}
 
   /* ---------- GAME 2: MEMORIA ---------- */
   .mem-grid{display:grid;grid-template-columns:repeat(4,84px);gap:12px;justify-content:center;margin:22px 0;}
-  .mem-card{width:84px;height:84px;border-radius:10px;background:var(--surface-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;transition:background .15s,transform .15s;}
-  .mem-card.flip{background:var(--accent-dim);}
-  .mem-card.matched{background:transparent;border-color:transparent;opacity:.35;cursor:default;}
+  .mem-card{
+    width:84px;height:84px;border-radius:12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:34px;
+    background:linear-gradient(145deg,#7f6cf0,#5a45d4);
+    border:2px solid #9486ff;
+    box-shadow: inset 0 4px 0 rgba(255,255,255,.28), inset 0 -5px 0 rgba(0,0,0,.28), 0 5px 12px rgba(0,0,0,.4);
+    position:relative;
+    transition:transform .15s, background .15s;
+  }
+  .mem-card::after{
+    content:'✦'; position:absolute; font-size:22px; color:rgba(255,255,255,.35);
+  }
+  .mem-card.flip{
+    background:linear-gradient(145deg,#fff6e0,#ffe9b8);
+    border-color:#FFDD8A;
+    box-shadow: inset 0 4px 0 rgba(255,255,255,.6), inset 0 -5px 0 rgba(180,120,20,.2), 0 5px 12px rgba(0,0,0,.4);
+    transform:scale(1.03);
+  }
+  .mem-card.flip::after{content:'';}
+  .mem-card.matched{background:transparent;border-color:transparent;opacity:.25;cursor:default;box-shadow:none;}
+  .mem-card.matched::after{content:'';}
   .mem-card.match-pulse{animation:memMatch .4s ease-out;}
   @keyframes memMatch{
     0%{transform:scale(1);}
-    40%{transform:scale(1.18);box-shadow:0 0 24px var(--accent);}
+    40%{transform:scale(1.18);box-shadow:0 0 30px #FECA57;}
     100%{transform:scale(1);}
   }
   .mem-card.wrong-shake{animation:memWrong .35s ease-in-out;}
@@ -267,6 +296,7 @@ const GAMES = [
   {id:'naves',    icon:'🚀', name:'Naves',    desc:'Esquiva meteoritos. Espacio para disparar cohete. Quieto 3 s = te apuntan.'},
   {id:'zigzag',   icon:'🔵', name:'Zigzag',   desc:'Clic para doblar. Sigue la pista o caes.'},
   {id:'simon',    icon:'🟪', name:'Secuencia',desc:'Repite la secuencia de colores. Cada ronda se hace más larga.'},
+  {id:'caida',    icon:'🕳️', name:'Caída',    desc:'Cae por los huecos. Si el techo te alcanza, pierdes.'},
 ];
 
 // ---------------------------------------------------------------------------
@@ -312,6 +342,7 @@ const MOCK_RANGES = {
   naves:     [5, 45],
   zigzag:    [8, 50],
   simon:     [3, 14],
+  caida:     [8, 45],
 };
 
 GAMES.forEach(g=>{
@@ -422,6 +453,7 @@ function openGame(id){
     case 'naves':    cleanups.current = gameNaves(); break;
     case 'zigzag':   cleanups.current = gameZigzag(); break;
     case 'simon':    cleanups.current = gameSimon(); break;
+    case 'caida':    cleanups.current = gameCaida(); break;
   }
 }
 
@@ -435,6 +467,15 @@ function gameShellHeader(g){
 }
 function bindBack(){
   document.getElementById('backBtn').addEventListener('click', REAL_MODE ? renderRealStatus : renderLobby);
+  // en modo jugador real, cada pantalla de juego lleva la tabla del día abajo,
+  // actualizada en vivo por el socket sin re-renderizar el juego
+  if(REAL_MODE && state.todayGameId && !document.getElementById('liveLeaderboardBody')){
+    const div = document.createElement('div');
+    div.className = 'live-leaderboard';
+    div.innerHTML = '<h3>Tabla del día</h3><div id="liveLeaderboardBody"></div>';
+    screen.appendChild(div);
+    renderLiveLeaderboard(state.todayGameId);
+  }
 }
 
 // arranca el juego con Enter O Espacio (además del clic en el botón)
@@ -1357,8 +1398,8 @@ function gameDoodle(){
       // mientras más alto el puntaje actual, menos probabilidad de verde y más
       // de naranja/roja — siempre hay por dónde subir, pero arriesgas más si
       // dejas que una se rompa sin aprovecharla
-      const difficulty = Math.min(1, maxHeightUnits / 60); // 0 al inicio, 1 a partir de cierta altura
-      const greenChance  = 0.55 - difficulty*0.35; // de 0.55 baja hasta 0.20
+      const difficulty = Math.min(1, maxHeightUnits / 45);
+      const greenChance  = 0.45 - difficulty*0.30; // de 0.45 baja hasta 0.15
       const orangeChance = 0.30 + difficulty*0.10; // de 0.30 sube hasta 0.40
       const r = Math.random();
       let type, uses;
@@ -1375,7 +1416,7 @@ function gameDoodle(){
     platforms.push({ x: W/2-PW, y: H-24, w: PW*2, type:'green', uses:Infinity, falling:false, vy:0 });
     let lastSpawnY = H-24;
     for(let i=1;i<9;i++){
-      lastSpawnY -= 48 + Math.random()*28;
+      lastSpawnY -= 68 + Math.random()*44;
       platforms.push(makePlatform(lastSpawnY));
     }
 
@@ -1455,7 +1496,7 @@ function gameDoodle(){
       // recicla plataformas fuera de vista (en coordenadas de pantalla) y genera nuevas arriba
       platforms = platforms.filter(p => (p.y - cameraY) < H+60);
       while(platforms.length < 9){
-        lastSpawnY -= 48 + Math.random()*28;
+        lastSpawnY -= 68 + Math.random()*44;
         platforms.push(makePlatform(lastSpawnY));
       }
 
@@ -1935,6 +1976,166 @@ function gameZigzag(){
 }
 
 /* =====================================================================
+   JUEGO 10 — CAÍDA (FallDown: cae por los huecos, el techo sube)
+===================================================================== */
+function gameCaida(){
+  const g = GAMES.find(x=>x.id==='caida');
+  const W=380, H=520, BALL_R=13, BAR_H=16, GAP_W=88;
+
+  function render(){
+    screen.innerHTML = `
+      ${gameShellHeader(g)}
+      <div class="hud">
+        <div class="stat">Tiempo<br><b id="hudSecs">0.0s</b></div>
+      </div>
+      <canvas id="caidaCanvas" width="${W}" height="${H}"></canvas>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:-6px;">Flechas o A·D para moverse</div>
+      <div style="text-align:center;margin-top:14px;">
+        <p class="muted" style="margin:6px 0 14px;font-size:13px;">${g.desc}</p>
+        <button class="primary-btn" id="startBtn" ${attemptsLeft(g.id)<=0?'disabled':''}>${attemptsLeft(g.id)<=0?'Sin intentos':'Iniciar'}</button>
+      </div>
+      <div id="resultSlot"></div>
+    `;
+    bindBack();
+    if(attemptsLeft(g.id)>0){ document.getElementById('startBtn').addEventListener('click', startAttempt); bindEnterStart('startBtn'); }
+    if(state.attempts[g.id].length){
+      const last=state.attempts[g.id][state.attempts[g.id].length-1];
+      document.getElementById('resultSlot').innerHTML=renderResultBox(g.id,last.score);
+    }
+    const cv=document.getElementById('caidaCanvas');
+    if(cv){const ctx=cv.getContext('2d');ctx.fillStyle='#101322';ctx.fillRect(0,0,W,H);}
+  }
+
+  function startAttempt(){
+    document.getElementById('startBtn').disabled=true;
+    const cv=document.getElementById('caidaCanvas');
+    const ctx=cv.getContext('2d');
+
+    let px=W/2, py=120;
+    let vy=0;
+    let scrollY=0;
+    let leftK=false, rightK=false;
+    let elapsedMs=0, alive=true;
+    let bars=[];
+    let nextBarY=260;
+
+    const BAR_COLORS=['#FF6B6B','#48DBFB','#FECA57','#1DD1A1','#FF6EB4','#A29BFE','#FF9F43'];
+
+    function ensureBars(){
+      while(nextBarY < scrollY + H + 200){
+        bars.push({ y: nextBarY, gapX: 30+Math.random()*(W-60-GAP_W), c: BAR_COLORS[bars.length % BAR_COLORS.length] });
+        nextBarY += 110 + Math.random()*50;
+      }
+      bars = bars.filter(b => b.y > scrollY - 100);
+    }
+    ensureBars();
+
+    function kd(e){
+      if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a') leftK=true;
+      if(e.key==='ArrowRight'||e.key.toLowerCase()==='d') rightK=true;
+    }
+    function ku(e){
+      if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a') leftK=false;
+      if(e.key==='ArrowRight'||e.key.toLowerCase()==='d') rightK=false;
+    }
+    setTimeout(()=>{ window.addEventListener('keydown',kd); window.addEventListener('keyup',ku); },120);
+
+    const stars=Array.from({length:40},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.3,b:Math.random()*.4+.15}));
+
+    const loop=setInterval(()=>{
+      if(!alive) return;
+      elapsedMs+=20;
+      const secs=elapsedMs/1000;
+      document.getElementById('hudSecs').textContent=secs.toFixed(1)+'s';
+
+      const scrollSpeed=1.6+secs*0.09;
+      scrollY+=scrollSpeed;
+
+      const hs=4.6;
+      if(leftK) px-=hs;
+      if(rightK) px+=hs;
+      px=Math.max(BALL_R+2,Math.min(W-BALL_R-2,px));
+
+      vy=Math.min(vy+0.5, 9);
+      py+=vy;
+
+      for(const b of bars){
+        const withinGap = px>b.gapX+BALL_R*0.4 && px<b.gapX+GAP_W-BALL_R*0.4;
+        if(!withinGap && py+BALL_R>b.y && py+BALL_R<b.y+BAR_H+vy+1 && vy>=0){
+          py=b.y-BALL_R; vy=0;
+        }
+      }
+
+      if(py-BALL_R < scrollY){ explode(secs); return; }
+      ensureBars();
+
+      draw();
+    },20);
+
+    function draw(){
+      const bg=ctx.createLinearGradient(0,0,0,H);
+      bg.addColorStop(0,'#181c30'); bg.addColorStop(1,'#0a0c18');
+      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      stars.forEach(s=>{ ctx.fillStyle=`rgba(255,255,255,${s.b})`; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); });
+
+      ctx.fillStyle='#232743'; ctx.fillRect(0,0,6,H); ctx.fillRect(W-6,0,6,H);
+      ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(6,0,2,H); ctx.fillRect(W-8,0,2,H);
+
+      for(const b of bars){
+        const sy=b.y-scrollY;
+        if(sy<-BAR_H||sy>H+BAR_H) continue;
+        drawBarSegment(6, sy, b.gapX-6, b.c);
+        drawBarSegment(b.gapX+GAP_W, sy, W-6-(b.gapX+GAP_W), b.c);
+      }
+
+      const dangerGrad=ctx.createLinearGradient(0,0,0,26);
+      dangerGrad.addColorStop(0,'rgba(255,80,80,.55)');
+      dangerGrad.addColorStop(1,'rgba(255,80,80,0)');
+      ctx.fillStyle=dangerGrad; ctx.fillRect(0,0,W,26);
+
+      const sy=py-scrollY;
+      ctx.fillStyle='rgba(0,0,0,.3)';
+      ctx.beginPath(); ctx.ellipse(px, sy+BALL_R*.7, BALL_R*.8, BALL_R*.32, 0, 0, Math.PI*2); ctx.fill();
+      const bg2=ctx.createRadialGradient(px-BALL_R*.3,sy-BALL_R*.3,1,px,sy,BALL_R);
+      bg2.addColorStop(0,'#8FF0D6'); bg2.addColorStop(.6,'#1DD1A1'); bg2.addColorStop(1,'#0c8a68');
+      ctx.fillStyle=bg2;
+      ctx.beginPath(); ctx.arc(px,sy,BALL_R,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.5)';
+      ctx.beginPath(); ctx.arc(px-BALL_R*.3,sy-BALL_R*.32,BALL_R*.26,0,Math.PI*2); ctx.fill();
+    }
+
+    function drawBarSegment(x,sy,w,color){
+      if(w<=0) return;
+      ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(x+3,sy+3,w,BAR_H);
+      ctx.fillStyle=color; ctx.fillRect(x,sy,w,BAR_H);
+      ctx.fillStyle='rgba(255,255,255,.32)'; ctx.fillRect(x,sy,w,3);
+      ctx.fillStyle='rgba(0,0,0,.28)'; ctx.fillRect(x,sy+BAR_H-3,w,3);
+    }
+
+    function explode(secs){
+      if(!alive) return;
+      alive=false; clearInterval(loop);
+      window.removeEventListener('keydown',kd);
+      window.removeEventListener('keyup',ku);
+      const cx=px, cy=py-scrollY;
+      let fr=0;
+      const el=setInterval(()=>{
+        fr++;
+        draw();
+        [['rgba(29,209,161,'+(1-fr/10)+')',fr*5],['rgba(143,240,214,'+(0.7-fr/12)+')',fr*3]].forEach(([c,r])=>{
+          if(r>0){ctx.fillStyle=c;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();}
+        });
+        if(fr>=9){clearInterval(el); if(!recordAttempt(g.id,Math.round(elapsedMs/100)/10)) render();}
+      },42);
+    }
+
+    draw();
+  }
+
+  render();
+}
+
+/* =====================================================================
    MODO JUGADOR REAL — pantalla de estado y arranque
 ===================================================================== */
 function renderRealStatus(){
@@ -2137,10 +2338,12 @@ if(REAL_MODE){
         return;
       }
       renderRealStatus();
+      return;
     }
-    // si ya estamos jugando una partida en curso, no interrumpimos con un
-    // re-render; la próxima vez que el jugador vuelva a la pantalla de estado
-    // (al terminar su intento) ya se usan los datos más recientes del cierre.
+    // actualización en vivo de la tabla si está visible, sin tocar el juego
+    if(document.getElementById('liveLeaderboardBody') && state.todayGameId){
+      renderLiveLeaderboard(state.todayGameId);
+    }
   });
 } else {
   /* =====================================================================
