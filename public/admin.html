@@ -8,13 +8,14 @@
 <style>
   body{ background:var(--bg); }
 
-  /* layout de dos columnas que usa toda la pantalla */
+  /* layout de dos columnas iguales, centradas en pantalla */
   #screenAdmin{
     display:grid;
-    grid-template-columns: 340px 1fr;
-    grid-template-rows: auto;
-    gap:14px;
+    grid-template-columns: 1fr 1fr;
+    gap:18px;
     align-items:start;
+    max-width:1100px;
+    margin:0 auto;
     padding:0 0 40px;
   }
   @media(max-width:780px){ #screenAdmin{ grid-template-columns:1fr; } }
@@ -43,9 +44,9 @@
   textarea{ height:88px; resize:vertical; }
   .msg{ font-size:12px; margin-top:5px; min-height:14px; }
 
-  /* el wrap no limita el ancho en el admin */
-  #adminRoot{ max-width:100%; padding:20px 24px 0; }
-  .topbar{ max-width:100%; }
+  /* el contenedor centra el contenido */
+  #adminRoot{ max-width:1140px; margin:0 auto; padding:20px 24px 0; }
+  .topbar{ max-width:1100px; margin-left:auto; margin-right:auto; }
 </style>
 </head>
 <body>

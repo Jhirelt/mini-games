@@ -1826,117 +1826,72 @@ function gameZigzag(){
     const SQRT2 = Math.SQRT2;
 
     function draw(){
-      // abismo: degradado radial muy oscuro al centro + casi negro en bordes
+      // abismo: casi negro absoluto para contraste máximo con la pista clara
       const grad = ctx.createRadialGradient(W/2,H*0.5,20, W/2,H*0.5,H);
-      grad.addColorStop(0, '#1a0a2e');   // centro: morado profundo
-      grad.addColorStop(0.5, '#0d0818');
-      grad.addColorStop(1, '#040208');   // borde: negro absoluto
+      grad.addColorStop(0, '#0b0415');
+      grad.addColorStop(0.6, '#050209');
+      grad.addColorStop(1, '#000000');
       ctx.fillStyle = grad;
       ctx.fillRect(0,0,W,H);
 
-      // puntos de luz en el abismo, simulando profundidad
+      // puntos de luz tenues del abismo
       for(let i=0;i<8;i++){
         const gx=W*(.1+i*.12), gy=H*(.2+Math.sin(i*1.3)*.4);
         const gr2=ctx.createRadialGradient(gx,gy,0,gx,gy,25);
-        gr2.addColorStop(0,'rgba(100,60,180,.12)');
-        gr2.addColorStop(1,'rgba(100,60,180,0)');
+        gr2.addColorStop(0,'rgba(90,50,170,.10)');
+        gr2.addColorStop(1,'rgba(90,50,170,0)');
         ctx.fillStyle=gr2; ctx.fillRect(0,0,W,H);
       }
 
       const visibleSegments = segments.filter(s => !(s.y0 < ball.y-520 || s.y1 > ball.y+200));
-      const SQRT2 = Math.SQRT2;
+      if(!visibleSegments.length) return;
 
-      // gradiente ÚNICO en espacio de canvas (no por segmento) — esto es lo que
-      // elimina las costuras: todos los segmentos y parches usan exactamente
-      // el mismo degradado, así que sus bordes compartidos son idénticos en
-      // color y no se nota dónde empieza o termina cada tramo
+      // La pista se dibuja como UN SOLO trazo grueso sobre la línea central.
+      // Un único path con lineJoin='miter' hace que el canvas resuelva las
+      // esquinas él mismo: sin parches, sin sobreposiciones, sin picos.
+      function buildCenterPath(offsetX, offsetY){
+        ctx.beginPath();
+        visibleSegments.forEach((s,i)=>{
+          if(i===0) ctx.moveTo(screenX(s.x0)+offsetX, screenY(s.y0)+offsetY);
+          ctx.lineTo(screenX(s.x1)+offsetX, screenY(s.y1)+offsetY);
+        });
+      }
+
+      const trackW = TRACK_HALF_WIDTH*2;
+      ctx.lineJoin='miter';
+      ctx.miterLimit=4;
+      ctx.lineCap='butt';
+
+      // gradiente único en espacio de canvas
       const trackGrad = ctx.createLinearGradient(0,0,0,H);
       trackGrad.addColorStop(0, '#FFDD8A');
       trackGrad.addColorStop(1, '#FF9F43');
 
-      // PASO 1: cara lateral del borde — sombra 3D que cae hacia el abismo
       const DEPTH = 8;
-      visibleSegments.forEach(s=>{
-        const px=1/SQRT2, py=s.dir/SQRT2;
-        const hw=TRACK_HALF_WIDTH;
-        const lax=screenX(s.x0-px*hw), lay=screenY(s.y0-py*hw);
-        const lbx=screenX(s.x1-px*hw), lby=screenY(s.y1-py*hw);
-        ctx.fillStyle='rgba(30,0,60,.9)';
-        ctx.beginPath();
-        ctx.moveTo(lax,lay); ctx.lineTo(lbx,lby);
-        ctx.lineTo(lbx+DEPTH,lby+DEPTH); ctx.lineTo(lax+DEPTH,lay+DEPTH);
-        ctx.closePath(); ctx.fill();
-        const rax=screenX(s.x0+px*hw), ray=screenY(s.y0+py*hw);
-        const rbx=screenX(s.x1+px*hw), rby=screenY(s.y1+py*hw);
-        ctx.beginPath();
-        ctx.moveTo(rax,ray); ctx.lineTo(rbx,rby);
-        ctx.lineTo(rbx+DEPTH,rby+DEPTH); ctx.lineTo(rax+DEPTH,ray+DEPTH);
-        ctx.closePath(); ctx.fill();
-      });
 
-      // PASO 2: parches cuadrados en los dobleces, mismo gradiente que la pista
-      // (antes eran de un color plano distinto al de los segmentos — esa
-      // diferencia de color era la costura visible en cada cruce)
-      ctx.fillStyle='rgba(30,0,60,.9)';
-      visibleSegments.forEach(s=>{
-        ctx.fillRect(
-          screenX(s.x1) - TRACK_HALF_WIDTH - 1,
-          screenY(s.y1) - TRACK_HALF_WIDTH - 1,
-          TRACK_HALF_WIDTH*2 + 2,
-          TRACK_HALF_WIDTH*2 + 2
-        );
-      });
-      ctx.fillStyle=trackGrad;
-      visibleSegments.forEach(s=>{
-        ctx.fillRect(
-          screenX(s.x1) - TRACK_HALF_WIDTH,
-          screenY(s.y1) - TRACK_HALF_WIDTH,
-          TRACK_HALF_WIDTH*2,
-          TRACK_HALF_WIDTH*2
-        );
-      });
+      // 1) cara lateral 3D: mismo path desplazado hacia abajo, en oscuro
+      ctx.strokeStyle='#1c0838';
+      ctx.lineWidth=trackW;
+      buildCenterPath(DEPTH, DEPTH);
+      ctx.stroke();
 
-      // PASO 3: superficie de la pista — mismo gradiente único para todos los segmentos
-      ctx.fillStyle = trackGrad;
-      visibleSegments.forEach(s=>{
-        const px=1/SQRT2, py=s.dir/SQRT2;
-        const hw=TRACK_HALF_WIDTH;
-        const ax=screenX(s.x0+px*hw), ay=screenY(s.y0+py*hw);
-        const bx=screenX(s.x1+px*hw), by=screenY(s.y1+py*hw);
-        const cx=screenX(s.x1-px*hw), cy=screenY(s.y1-py*hw);
-        const dx=screenX(s.x0-px*hw), dy=screenY(s.y0-py*hw);
-        ctx.beginPath();
-        ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(cx,cy); ctx.lineTo(dx,dy);
-        ctx.closePath(); ctx.fill();
-      });
+      // 2) borde exterior fino oscuro para definir la silueta
+      ctx.strokeStyle='#3a1560';
+      ctx.lineWidth=trackW+3;
+      buildCenterPath(0, 0);
+      ctx.stroke();
 
-      // PASO 4: bisel — UNA sola línea continua por lado (no una por segmento),
-      // así no quedan puntas de línea sobrepuestas en cada cruce
-      ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round';
-      ctx.strokeStyle='rgba(255,220,100,.55)';
-      if(visibleSegments.length){
-        ctx.beginPath();
-        visibleSegments.forEach((s,i)=>{
-          const px=1/SQRT2, py=s.dir/SQRT2, hw=TRACK_HALF_WIDTH;
-          const x0=screenX(s.x0-px*hw), y0=screenY(s.y0-py*hw);
-          const x1=screenX(s.x1-px*hw), y1=screenY(s.y1-py*hw);
-          if(i===0) ctx.moveTo(x0,y0);
-          else ctx.lineTo(x0,y0); // conecta con el punto inicial de este segmento
-          ctx.lineTo(x1,y1);
-        });
-        ctx.stroke();
+      // 3) superficie de la pista
+      ctx.strokeStyle=trackGrad;
+      ctx.lineWidth=trackW;
+      buildCenterPath(0, 0);
+      ctx.stroke();
 
-        ctx.beginPath();
-        visibleSegments.forEach((s,i)=>{
-          const px=1/SQRT2, py=s.dir/SQRT2, hw=TRACK_HALF_WIDTH;
-          const x0=screenX(s.x0+px*hw), y0=screenY(s.y0+py*hw);
-          const x1=screenX(s.x1+px*hw), y1=screenY(s.y1+py*hw);
-          if(i===0) ctx.moveTo(x0,y0);
-          else ctx.lineTo(x0,y0);
-          ctx.lineTo(x1,y1);
-        });
-        ctx.stroke();
-      }
+      // 4) línea de luz central sutil (guía visual, un solo trazo también)
+      ctx.strokeStyle='rgba(255,255,255,.10)';
+      ctx.lineWidth=2;
+      buildCenterPath(0, 0);
+      ctx.stroke();
 
       // bola toy con gradiente radial 3D
       ctx.fillStyle='rgba(0,0,0,.3)';
