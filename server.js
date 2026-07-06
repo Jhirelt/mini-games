@@ -184,7 +184,7 @@ function requireAdmin(req, res, next) {
 
 // estado completo (incluye quién es cada nombre, útil para el panel admin)
 app.get('/api/admin/state', requireAdmin, (req, res) => {
-  res.json(state);
+  res.json({ ...state, today: { ...state.today, leaderboard: computeLeaderboard() } });
 });
 
 app.post('/api/admin/users', requireAdmin, (req, res) => {
