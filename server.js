@@ -110,18 +110,23 @@ io.on('connection', (socket) => {
 
   socket.on('claim', ({ name, sessionId }) => {
     if (!name || !sessionId) return;
-    const ownerOfName = state.claims[name];
+    const trimmed = String(name).trim().slice(0, 40);
+    if (!trimmed) return;
+    // si el admin cargó una lista, el nombre debe estar en ella
+    if (state.users.length > 0 && !state.users.includes(trimmed)) {
+      socket.emit('claimResult', { ok: false, reason: 'Ese nombre no está en la lista de hoy.' });
+      return;
+    }
+    const ownerOfName = state.claims[trimmed];
     if (ownerOfName && ownerOfName !== sessionId) {
-      socket.emit('claimResult', { ok: false, reason: 'Ese usuario ya fue tomado por otra persona.' });
+      socket.emit('claimResult', { ok: false, reason: 'Ese nombre ya fue tomado por alguien más.' });
       return;
     }
-    if (!state.users.includes(name)) {
-      socket.emit('claimResult', { ok: false, reason: 'Ese usuario no existe en la lista de hoy.' });
-      return;
-    }
-    state.claims[name] = sessionId;
+    state.claims[trimmed] = sessionId;
+    // si no había lista previa, agregar el nombre a users para que aparezca en admin
+    if (!state.users.includes(trimmed)) state.users.push(trimmed);
     saveState();
-    socket.emit('claimResult', { ok: true, name });
+    socket.emit('claimResult', { ok: true, name: trimmed });
     broadcast();
   });
 
