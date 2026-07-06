@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Rifa de Minijuegos</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* estilos extra solo para el panel admin */
+  .live-badge{display:inline-block;background:#FF6B6B;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:8px;animation:livePulse 1.5s infinite;}
+  @keyframes livePulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  .score-big{font-size:22px;font-weight:900;color:var(--accent);font-family:monospace;}
+  .attempt-row{background:var(--surface-2);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .attempt-row .name{font-weight:600;font-size:14px;}
+  .attempt-row .attempts{color:var(--muted);font-size:12px;}
+  .rank-1 .name{color:#FECA57;}
+  .rank-2 .name{color:#B2BEC3;}
+  .rank-3 .name{color:#CD7F32;}
+  .section-divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+  .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+  .dot-green{background:#1DD1A1;}
+  .dot-gray{background:var(--border);}
+  .connected-count{color:var(--accent);font-size:13px;font-weight:700;}
+</style>
+</head>
+<body>
+  <div class="wrap" style="max-width:760px;">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span><h1>Panel de Administración</h1></div>
+      <div id="liveIndicator" style="display:none;font-size:12px;color:var(--muted);">
+        <span class="live-badge">EN VIVO</span>
+        <span id="connectedInfo" class="connected-count"></span>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="screenLogin" class="card">
+      <div class="eyebrow">Acceso</div>
+      <h2>Llave de administrador</h2>
+      <input type="password" id="adminKey" placeholder="Llave de admin" style="margin-top:14px;">
+      <div class="row" style="justify-content:center;margin-top:12px;">
+        <button class="primary-btn" id="loginBtn">Entrar</button>
+      </div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+
+    <!-- PANEL ADMIN -->
+    <div id="screenAdmin" class="hidden" style="text-align:left;">
+
+      <!-- RESULTADOS EN VIVO (primera sección, la más importante) -->
+      <div class="card admin-section">
+        <h3>Resultados en vivo <span class="live-badge">EN VIVO</span></h3>
+        <p class="muted" id="liveGameLabel">Reto de hoy: —</p>
+        <div id="liveResultsGrid" style="margin-top:12px;"></div>
+      </div>
+
+      <!-- ESTADO DE CONEXIÓN Y CONTROL -->
+      <div class="card admin-section">
+        <h3>Control del día</h3>
+        <div id="connectedGrid" style="margin-bottom:16px;"></div>
+        <div class="row" style="flex-wrap:wrap;">
+          <button class="primary-btn" id="startBtn">Iniciar juego para todos</button>
+          <button class="danger-btn" id="resetBtn">Reiniciar día</button>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="card admin-section">
+        <h3>Configuración del día</h3>
+
+        <p class="muted" style="margin-top:14px;">Lista de jugadores (uno por línea)</p>
+        <textarea id="namesInput" placeholder="Juan Pérez&#10;María Vargas&#10;..." style="margin-top:6px;"></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button class="primary-btn" id="saveNamesBtn">Guardar lista</button>
+        </div>
+
+        <hr class="section-divider">
+
+        <p class="muted">Minijuego de hoy</p>
+        <div class="row" style="margin-top:6px;">
+          <select id="todayGameSelect"></select>
+          <button class="primary-btn" id="setTodayBtn">Fijar reto</button>
+        </div>
+        <div class="msg" id="todayMsg" style="color:var(--accent);margin-top:6px;"></div>
+
+        <hr class="section-divider">
+
+        <p class="muted">Modo de prueba</p>
+        <div class="row" style="margin-top:6px;">
+          <button class="primary-btn" id="openTestBtn">Abrir modo de prueba</button>
+        </div>
+      </div>
+
+      <!-- RULETA DE PREMIOS -->
+      <div class="card admin-section">
+        <h3>Ruleta de premios</h3>
+        <p class="muted">Hasta 40 nombres, uno por línea. Ábrela en pantalla grande antes de girar.</p>
+        <textarea id="wheelNamesInput" placeholder="Juan Pérez&#10;María Vargas&#10;..." style="margin-top:8px;"></textarea>
+        <div class="row" style="margin-top:8px;flex-wrap:wrap;">
+          <button class="primary-btn" id="saveWheelBtn">Guardar nombres</button>
+          <button class="primary-btn" id="spinBtn" style="background:var(--toy-orange,#FF9F43);color:#1a0a00;">Girar ruleta</button>
+          <a class="ghost-btn" href="ruleta.html" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">Abrir pantalla ↗</a>
+        </div>
+        <div class="msg" id="wheelMsg" style="color:var(--accent);margin-top:6px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
