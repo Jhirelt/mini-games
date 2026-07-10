@@ -560,15 +560,15 @@ function recordAttempt(gameId, score){
 function renderResultBox(gameId, lastScore){
   const g = GAMES.find(x=>x.id===gameId);
   const best = bestScore(gameId);
-  const unit = g.lowerIsBetter ? ' ms' : '';
+  const isTime = ['naves','zigzag','memoria','caida'].includes(gameId);
+  const unit = g.lowerIsBetter && !isTime ? ' ms' : (isTime ? 's' : (gameId==='centro' ? '%' : ''));
+  const fmtV = v => (typeof v==='number' && v%1!==0) ? v.toFixed(gameId==='centro'?2:1) : v;
 
   if(REAL_MODE){
-    // en modo real, recordAttempt ya llama showAttemptDone que muestra la pantalla
-    // de feedback; esta función solo se usa en el modo demo/admin
     setTimeout(()=> renderLiveLeaderboard(gameId), 0);
     return `
       <div class="result-box">
-        <div class="score">${best}${unit}</div>
+        <div class="score">${fmtV(best)}${unit}</div>
         <div class="live-leaderboard" style="margin-top:14px;">
           <h3>🏆 Mejores puntajes de hoy (en vivo)</h3>
           <div id="liveLeaderboardBody"></div>
@@ -577,23 +577,26 @@ function renderResultBox(gameId, lastScore){
     `;
   }
 
-  const board = state.mockBoards[gameId];
-  const ahead = g.lowerIsBetter ? board.filter(p=>p.score < best).length : board.filter(p=>p.score > best).length;
-
-  let leaderHtml = '';
-  if(state.revealLeaderboard){
-    const full = board.concat([{name:'Tú', score:best, me:true}]).sort((a,b)=> g.lowerIsBetter ? a.score-b.score : b.score-a.score);
-    leaderHtml = `<table class="leader-table"><thead><tr><th>#</th><th>Jugador</th><th>Puntaje</th></tr></thead><tbody>
-      ${full.map((p,i)=>`<tr class="${p.me?'me-row':''}"><td>${i+1}</td><td>${p.me?'Tú':p.name}</td><td>${p.score}${unit}</td></tr>`).join('')}
-    </tbody></table>`;
-  } else {
-    leaderHtml = `<div class="leader-line">${ahead===0 ? '¡Vas en primer lugar!' : `Hay ${ahead} jugador${ahead>1?'es':''} por delante de ti.`}</div>`;
-  }
+  // modo demo/prueba: puntaje del intento recién hecho en grande,
+  // debajo la lista de todos los intentos, y el mejor marcado
+  const attempts = state.attempts[gameId] || [];
+  const attemptsHtml = attempts.map((a,i)=>{
+    const isBest = a.score === best;
+    return `<div style="display:flex;justify-content:space-between;padding:4px 10px;border-radius:6px;
+                 ${isBest?'background:rgba(254,202,87,.12);':''}font-size:13px;">
+      <span style="color:var(--muted);">Intento ${i+1}</span>
+      <span style="font-family:monospace;${isBest?'color:var(--accent);font-weight:700;':''}">${fmtV(a.score)}${unit}${isBest?' ★':''}</span>
+    </div>`;
+  }).join('');
 
   return `
     <div class="result-box">
-      <div class="score">${best}${unit}</div>
-      ${leaderHtml}
+      <div style="font-size:12px;color:var(--muted);margin-bottom:2px;">Este intento</div>
+      <div class="score">${fmtV(lastScore)}${unit}</div>
+      <div style="margin-top:12px;text-align:left;max-width:280px;margin-inline:auto;">
+        ${attemptsHtml}
+      </div>
+      ${attempts.length>1 ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);">Mejor: <b style="color:var(--accent);font-family:monospace;">${fmtV(best)}${unit}</b></div>` : ''}
     </div>
   `;
 }
